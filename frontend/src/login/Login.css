@@ -1,0 +1,111 @@
+/* Estilo para el contenedor principal (fondo y posicionamiento) */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #333; /* Fondo oscuro */
+  position: relative;
+}
+
+/* Fondo con imágenes */
+.login-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('https://i.pinimg.com/736x/d5/7f/ba/d57fba254554fabce561ca2d636d0619.jpg');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.4; /* Baja opacidad para el fondo */
+}
+
+/* Estilo del formulario */
+.login-form {
+  background-color: rgba(255, 255, 255, 0.8); /* Fondo blanco con opacidad */
+  backdrop-filter: blur(10px); /* Efecto de desenfoque en el fondo */
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+}
+
+/* Imagen de avatar centrada */
+.login-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto 20px; /* Centra el avatar */
+  overflow: hidden;
+}
+
+.login-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Título de bienvenida */
+.login-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Estilo de los inputs */
+.input-field {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+/* Estilo de los inputs cuando están enfocados */
+.input-field:focus {
+  border-color: #4c6ef5;
+  outline: none;
+  background-color: #fff;
+}
+
+/* Estilo del botón */
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #4c6ef5;
+  color: white;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Estilo del botón cuando pasa el mouse */
+.login-button:hover {
+  background-color: #3b5bcb;
+}
+
+/* Mensajes de error o éxito */
+.message {
+  margin-top: 20px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.message.success {
+  color: green;
+}
+
+.message.error {
+  color: red;
+}

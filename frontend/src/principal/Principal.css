@@ -1,0 +1,158 @@
+/* Contenedor principal de la página */
+.principal-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Alineación al principio */
+  min-height: 100vh;
+  background-color: #f4f4f9;
+  padding: 20px;
+  flex-direction: column;
+  position: relative;
+  margin-top: 0; /* Eliminamos cualquier margen superior */
+}
+
+/* Estilo del header */
+.principal-header {
+  background-color: #007bff; /* Fondo azul */
+  color: white;
+  padding: 40px 20px; /* Aumentamos el padding superior e inferior */
+  text-align: center;
+  width: 100%;
+  margin-top: 0; /* Hacemos que esté pegado al top */
+  border-radius: 0; /* Eliminamos el borde redondeado */
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.principal-header h1 {
+  font-size: 32px; /* Aumentamos el tamaño del título */
+  margin-bottom: 10px;
+}
+
+.principal-header p {
+  font-size: 18px; /* Aumentamos el tamaño del subtítulo */
+  margin-bottom: 10px;
+}
+
+.date {
+  font-size: 16px; /* Aumentamos el tamaño de la fecha */
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+/* Menú hamburguesa */
+.hamburger-menu {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.hamburger-menu .line {
+  width: 30px;
+  height: 5px;
+  margin: 6px 0;
+  background-color: #333;
+  transition: 0.4s;
+}
+
+.hamburger-menu.open .line:nth-child(1) {
+  transform: rotate(-45deg) translate(-5px, 6px);
+}
+
+.hamburger-menu.open .line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-menu.open .line:nth-child(3) {
+  transform: rotate(45deg) translate(-5px, -6px);
+}
+
+/* Sidebar - menú lateral con animación */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -200px; /* Reducción del tamaño de la barra lateral */
+  width: 200px; /* Barra lateral más pequeña */
+  height: 100%;
+  background-color: white;  /* Barra lateral de color blanca */
+  color: black; /* Texto en color negro */
+  padding: 20px;
+  transition: left 0.3s ease; /* Animación para el deslizamiento */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  z-index: 9; /* Aseguramos que esté por encima de otros elementos */
+}
+
+.sidebar.open {
+  left: 0; /* Cuando el menú se abre, la barra lateral se mueve a la izquierda */
+}
+
+/* Estilo de cada botón en la barra lateral */
+.principal-button {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px; /* Bordes más redondeados */
+  padding: 10px;
+  width: 160px; /* Ajustamos el ancho de los botones */
+  text-align: center;
+  font-size: 16px; /* Reducimos el tamaño de la fuente */
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px; /* Espacio entre los botones */
+}
+
+.principal-button img {
+  width: 40px; /* Reducimos el tamaño de los iconos */
+  height: 40px;
+  object-fit: cover;
+  margin-bottom: 5px;
+}
+
+.principal-button span {
+  margin-top: 5px;
+  font-size: 14px; /* Reducimos el tamaño del texto */
+  font-weight: bold;
+}
+
+/* Contenedor de los botones centrales */
+.principal-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px; /* Espacio entre los botones */
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 120px; /* Ajuste para no solaparse con el header */
+}
+
+/* Botón de "Cerrar sesión" */
+.logout-button {
+  margin-top: 20px;
+  background-color: #ff4d4d;
+  color: white;
+  padding: 10px 20px;
+  font-size: 14px; /* Reducimos el tamaño del texto */
+  font-weight: bold;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+  background-color: #ff1a1a;
+}
+.no-link {
+  text-decoration: none;  /* Elimina el subrayado */
+  color: inherit;         /* Mantiene el color del texto predeterminado */
+}

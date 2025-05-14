@@ -51,7 +51,7 @@ function Principal() {
         </button>
 
         {/* Enlace a la lista de clientes */}
-        <Link to="/clientes">
+        <Link to="/clientes" className="no-link">
           <button className="principal-button">
             <img src="https://cdn-icons-png.flaticon.com/512/686/686348.png" alt="Cliente" />
             <span>CLIENTE</span>
@@ -59,17 +59,20 @@ function Principal() {
         </Link>
 
         {/* Enlace a la lista de pedidos */}
-        <Link to="/pedidos">
+        <Link to="/pedidos" className="no-link">
           <button className="principal-button">
             <img src="https://cdn-icons-png.flaticon.com/512/6384/6384868.png" alt="Pedido" />
             <span>PEDIDO</span>
-          </button>
-        </Link>
+            </button>
+          </Link>
 
+        <Link to="/inventario" className="no-link">
         <button className="principal-button">
           <img src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png" alt="Inventario" />
           <span>INVENTARIO</span>
         </button>
+        </Link>
+        
         <button className="principal-button">
           <img src="https://cdn-icons-png.flaticon.com/512/5674/5674015.png" alt="Reportes" />
           <span>REPORTES</span>
@@ -102,10 +105,14 @@ function Principal() {
             </button>
           </Link>
 
+        {/* Enlace a la lista de inventario */}
+        <Link to="/inventario" className="no-link">
         <button className="principal-button">
           <img src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png" alt="Inventario" />
           <span>INVENTARIO</span>
         </button>
+        </Link>
+        
         <button className="principal-button">
           <img src="https://cdn-icons-png.flaticon.com/512/5674/5674015.png" alt="Reportes" />
           <span>REPORTES</span>

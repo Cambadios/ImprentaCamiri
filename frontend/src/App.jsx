@@ -1,12 +1,16 @@
 // src/App.jsx
 import React from "react";
-import { Route, Routes } from "react-router-dom";
+import { Routes, Route } from 'react-router-dom';
+
 import Login from "./login/Login";
 import Principal from "./principal/Principal";
 import ClienteForm from "./clientes/ClienteForm";
 import ClienteList from "./clientes/ClienteList";
 import PedidoForm from "./pedidos/PedidoForm";
-import PedidoList from "./pedidos/PedidoList";  // Asegúrate de que esta ruta esté bien definida
+import PedidoList from "./pedidos/PedidoList";
+import ProductoForm from './inventario/ProductoForm'; 
+import ProductoList from './inventario/ProductoList'; 
+
 
 function App() {
   return (
@@ -15,8 +19,11 @@ function App() {
       <Route path="/principal" element={<Principal />} />
       <Route path="/clientes" element={<ClienteList />} />
       <Route path="/clientes/agregar" element={<ClienteForm />} />
-      <Route path="/pedidos" element={<PedidoList />} /> {/* Asegúrate de que esta ruta esté configurada */}
+      <Route path="/pedidos" element={<PedidoList />} />
       <Route path="/pedidos/agregar" element={<PedidoForm />} />
+      <Route path="/inventario" element={<ProductoList />} />
+      <Route path="/inventario/agregar" element={<ProductoForm />} />
+
     </Routes>
   );
 }

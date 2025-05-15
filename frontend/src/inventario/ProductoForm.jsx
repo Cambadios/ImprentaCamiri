@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { createCliente, getClientes, deleteCliente } from '../clientes/ClienteService';  // Importación correcta
+import { useNavigate } from 'react-router-dom';
 
 const ProductoForm = () => {
   const [nombre, setNombre] = useState('');
   const [cantidad, setCantidad] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,20 +15,15 @@ const ProductoForm = () => {
     try {
       const response = await fetch('http://localhost:3000/api/producto', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(producto),
       });
 
-      const data = await response.json();
-      
       if (response.ok) {
         alert('Producto agregado correctamente');
-        setNombre('');
-        setCantidad('');
-        setDescripcion('');
+        navigate('/inventario');  // Redirige a la lista de productos
       } else {
+        const data = await response.json();
         alert('Error al agregar producto: ' + data.message);
       }
     } catch (error) {
@@ -36,7 +32,7 @@ const ProductoForm = () => {
   };
 
   return (
-    <div>
+    <div style={{ maxWidth: '400px', margin: 'auto', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '5px' }}>
       <h2>Agregar Producto</h2>
       <form onSubmit={handleSubmit}>
         <label>Nombre:</label>
@@ -45,6 +41,7 @@ const ProductoForm = () => {
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
+          style={{ width: '100%', marginBottom: '10px', padding: '8px' }}
         />
         <label>Cantidad:</label>
         <input
@@ -52,14 +49,16 @@ const ProductoForm = () => {
           value={cantidad}
           onChange={(e) => setCantidad(e.target.value)}
           required
+          style={{ width: '100%', marginBottom: '10px', padding: '8px' }}
         />
         <label>Descripción:</label>
         <textarea
           value={descripcion}
           onChange={(e) => setDescripcion(e.target.value)}
           required
+          style={{ width: '100%', marginBottom: '10px', padding: '8px' }}
         ></textarea>
-        <button type="submit">Agregar</button>
+        <button type="submit" style={{ padding: '10px 20px' }}>Agregar</button>
       </form>
     </div>
   );

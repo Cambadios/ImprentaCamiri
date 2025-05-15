@@ -8,7 +8,7 @@ import ClienteForm from "./clientes/ClienteForm";
 import ClienteList from "./clientes/ClienteList";
 import PedidoForm from "./pedidos/PedidoForm";
 import PedidoList from "./pedidos/PedidoList";
-import ProductoForm from './inventario/ProductoForm'; 
+import ProductoForm from './inventario/ProductoForm';
 import ProductoList from './inventario/ProductoList'; 
 
 

@@ -1,13 +1,11 @@
-// src/pedidos/PedidoList.jsx
 import React, { useState, useEffect } from 'react';
-import { getPedidos, deletePedido } from './PedidoService';  // Importa las funciones de servicio
-import { useNavigate } from 'react-router-dom';
+import { getPedidos, deletePedido } from './PedidoService';
+import VolverPrincipal from '../comunes/VolverPrincipal';
+import { Link } from 'react-router-dom';
 
 function PedidoList() {
   const [pedidos, setPedidos] = useState([]);
-  const navigate = useNavigate();
 
-  // Obtener los pedidos cuando el componente se monta
   useEffect(() => {
     const fetchPedidos = async () => {
       const data = await getPedidos();
@@ -16,24 +14,23 @@ function PedidoList() {
     fetchPedidos();
   }, []);
 
-  // Eliminar un pedido
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm('¿Estás seguro de que quieres eliminar este pedido?');
     if (confirmDelete) {
-      await deletePedido(id);  // Llamamos al servicio para eliminar el pedido
-      setPedidos(pedidos.filter(pedido => pedido._id !== id));  // Actualizamos la lista de pedidos
+      await deletePedido(id);
+      setPedidos(pedidos.filter(pedido => pedido._id !== id));
     }
-  };
-
-  // Redirigir al formulario de crear pedido
-  const handleAddPedido = () => {
-    navigate('/pedidos/agregar');
   };
 
   return (
     <div>
+      <VolverPrincipal />
+
       <h2>Lista de Pedidos</h2>
-      <button onClick={handleAddPedido}>Agregar Pedido</button>
+
+      <Link to="/pedidos/agregar">
+        <button>Agregar Pedido</button>
+      </Link>
 
       <ul>
         {pedidos.map(pedido => (

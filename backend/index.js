@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');  // Ruta de Login
+const usuarioRoutes = require('./routes/usuarioRoutes');
 const clienteRoutes = require('./routes/clienteRoutes');  // Ruta de Clientes
 const pedidoRoutes = require('./routes/pedidoRoutes');  // Ruta de Pedidos
 const inventarioRoutes = require('./routes/inventarioRoutes');  // Ruta de Inventario
@@ -19,7 +20,9 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('❌ Error al conectar a MongoDB:', err));
 
 // Usar las rutas de autenticación, clientes, pedidos e inventario
+app.use(express.json());
 app.use('/api', authRoutes);
+app.use('/api', usuarioRoutes);
 app.use('/api', clienteRoutes);
 app.use('/api', pedidoRoutes);
 app.use('/api', inventarioRoutes);  // Aquí agregamos la ruta del inventario

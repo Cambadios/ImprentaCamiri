@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import './Login.css';
+import { useNavigate } from "react-router-dom";  // Importar hook para redireccionamiento
+import './Login.css';  // Asegúrate de tener los estilos para el login
 
 function Login() {
   const [nombre, setNombre] = useState("");  // Estado para nombre de usuario
   const [contraseña, setContraseña] = useState("");  // Estado para contraseña
   const [mensaje, setMensaje] = useState("");  // Estado para mensaje de error o éxito
-  const [mostrarContraseña, setMostrarContraseña] = useState(false);  // Estado para controlar visibilidad de la contraseña
   const navigate = useNavigate();  // Usar hook para redireccionamiento
 
   const handleSubmit = async (e) => {
@@ -58,27 +57,14 @@ function Login() {
           />
 
           {/* Campo para la contraseña */}
-          <div className="password-container">
-            <input
-              type={mostrarContraseña ? "text" : "password"}
-              value={contraseña}
-              onChange={(e) => setContraseña(e.target.value)}
-              placeholder="Contraseña"
-              className="input-field"
-              required
-            />
-            <button
-              type="button"
-              className="toggle-password"
-              onClick={() => setMostrarContraseña(!mostrarContraseña)}
-            >
-              {mostrarContraseña ? (
-                <i className="fas fa-eye-slash"></i> // Ojo cerrado
-              ) : (
-                <i className="fas fa-eye"></i> // Ojo abierto
-              )}
-            </button>
-          </div>
+          <input
+            type="password"
+            value={contraseña}
+            onChange={(e) => setContraseña(e.target.value)}
+            placeholder="Contraseña"
+            className="input-field"
+            required
+          />
           
           {/* Botón para iniciar sesión */}
           <button type="submit" className="login-button">
@@ -98,3 +84,4 @@ function Login() {
 }
 
 export default Login;
+

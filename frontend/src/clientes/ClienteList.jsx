@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getClientes, deleteCliente } from './ClienteService';  
 import VolverPrincipal from '../comunes/VolverPrincipal'; // Ajusta la ruta si es necesario
 import { Link } from 'react-router-dom';
+import './cliente.css';
 
 function ClienteList() {
   const [clientes, setClientes] = useState([]);

@@ -1,0 +1,304 @@
+.principal-container {
+  position: relative;
+  min-height: 100vh;
+  padding: 20px;
+  margin-top: 0;
+  background-color: beige;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+}
+
+.bg-image-1,
+.bg-image-2,
+.bg-image-3,
+.bg-image-4,
+.bg-image-5,
+.bg-image-6 {
+  position: fixed;
+  top: 0; 
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-repeat: repeat;
+  background-position: center center;
+  background-size: 200px 200px;
+  opacity: 0.15;
+  pointer-events: none;
+  filter: brightness(0.85) grayscale(15%);
+  transition: opacity 0.5s ease;
+  mix-blend-mode: screen;
+  z-index: 0;
+}
+
+.bg-image-1 { background-image: url('https://i.pinimg.com/736x/17/a0/3a/17a03ace53bc30adaa41076ecef390db.jpg'); }
+.bg-image-2 { background-image: url('https://i.pinimg.com/736x/58/53/0d/58530d89ee39c6edadc2050e999c7c55.jpg'); }
+.bg-image-3 { background-image: url('https://i.pinimg.com/736x/ec/2d/65/ec2d65b1b5b6db77cfccd103a2fc2401.jpg'); }
+.bg-image-4 { background-image: url('https://i.pinimg.com/736x/be/ce/66/bece66c645007d8ac38175255ed9af39.jpg'); }
+.bg-image-5 { background-image: url('https://i.pinimg.com/736x/65/af/c7/65afc7acdfe22a457e97e5c757360193.jpg'); }
+.bg-image-6 { background-image: url('https://i.pinimg.com/736x/5f/20/8e/5f208e18db4f240785d1d4ce88b99a2c.jpg'); }
+
+.principal-header {
+  position: relative;
+  z-index: 40;
+  width: 100%;
+  background-color: #cbb88a;
+  padding: 30px 20px;
+  text-align: center;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.principal-header h1 {
+  font-size: 3rem;
+  margin: 0;
+  color: #3e3a2f;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.principal-header p {
+  font-size: 1.25rem;
+  margin: 10px 0 0 0;
+  color: #5a5336;
+  font-weight: 500;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.principal-header .date {
+  display: block;
+  margin-top: 8px;
+  font-size: 1rem;
+  color: #766f4f;
+  font-weight: 400;
+}
+
+.principal-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  width: 100%; /* o un ancho específico */
+  margin-top: 120px;
+}
+
+/* ----------- BARRA LATERAL MODIFICADA ----------- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -200px;
+  width: 200px;
+  height: 100%;
+  background-color: #d6c79c; /* Beige medio entre oscuro y claro */
+  color: #3e3a2f; /* Café oscuro para texto */
+  padding: 20px 10px;
+  transition: left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centrar contenido */
+  z-index: 50;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Mostrar sidebar cuando está abierta */
+.sidebar.open {
+  left: 0;
+}
+
+/* Texto en la parte superior de la barra lateral */
+.sidebar::before {
+  content: "IMPRENTA CAMIRI";
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #3e3a2f; /* Café */
+  margin-bottom: 25px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  user-select: none;
+  text-align: center;
+  width: 100%;
+}
+
+/* Botones laterales modificados */
+.principal-button {
+  background-color: #fff;
+  border: 1px solid #bfb49d;
+  border-radius: 8px;
+  padding: 8px;
+  width: 140px; /* Un poco más pequeño */
+  text-align: center;
+  font-size: 14px; /* Más pequeño */
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
+  margin-bottom: 12px;
+  color: #3e3a2f; /* Texto café */
+}
+
+.principal-button:hover {
+  background-color: #e6f0ff;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+.principal-button img {
+  width: 35px; /* Imagen más pequeña */
+  height: 35px;
+  object-fit: cover;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+.principal-button span {
+  margin-top: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #3e3a2f;
+}
+
+/* Botón cerrar sesión dentro de sidebar */
+.logout-button {
+  margin-top: 20px;
+  background-color: #a85c39; /* Café más oscuro */
+  color: white;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 140px;
+}
+
+.logout-button:hover {
+  background-color: #6e3f22;
+}
+
+/* Para los enlaces que no se deben decorar ni cambiar color */
+.no-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Menú hamburguesa */
+.hamburger-menu {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  cursor: pointer;
+  z-index: 60;
+}
+
+.hamburger-menu .line {
+  width: 30px;
+  height: 5px;
+  margin: 6px 0;
+  background-color: #333;
+  transition: 0.4s;
+}
+
+.hamburger-menu.open .line:nth-child(1) {
+  transform: rotate(-45deg) translate(-5px, 6px);
+}
+
+.hamburger-menu.open .line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-menu.open .line:nth-child(3) {
+  transform: rotate(45deg) translate(-5px, -6px);
+}
+
+@media (max-width: 600px) {
+  .principal-buttons {
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 80px;
+  }
+
+  .principal-button {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .sidebar {
+    width: 150px;
+  }
+
+  .principal-button {
+    width: 130px;
+  }
+}
+
+/* ------------ Estilos para carrusel -------------- */
+.carousel-container {
+  position: relative;
+  margin-top: 40px;
+  width: 80%;
+  max-width: 700px;
+  height: 300px;
+  background-color: beige;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  margin-left: auto;
+  margin-right: auto;
+  z-index: 10;
+}
+
+.carousel-image {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  user-select: none;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.7);
+  border: none;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.carousel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.prev-btn {
+  left: 15px;
+}
+
+.next-btn {
+  right: 15px;
+}

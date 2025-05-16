@@ -11,29 +11,56 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Realizar solicitud POST para hacer login
-    const res = await fetch("http://localhost:3000/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre, contraseña }),  // Enviar nombre y contraseña al backend
-    });
+    setMensaje('Intentando conectar...');  // Mensaje de carga mientras se intenta conectar
 
-    const text = await res.text();
-    setMensaje(text);  // Mostrar mensaje de éxito o error
+    try {
+      // Realizar la petición al backend
+      const res = await fetch("http://localhost:3000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, contraseña }),  // Enviar nombre y contraseña en formato JSON
+      });
 
-    // Si el login es exitoso, redirigir a la página principal
-    if (text.includes("exitoso")) {
-      navigate("/principal");  // Redirige a la página principal
+      console.log(res)
+      if (!res.ok) {
+        // Si la respuesta no es correcta, intentamos leer el cuerpo como JSON o texto
+        let errorMsg;
+        try {
+          const errorData = await res.json();  // Intentar leer la respuesta como JSON
+          errorMsg = errorData.mensaje || JSON.stringify(errorData);
+        } catch (jsonError) {
+          // Si no es un JSON válido, leer como texto
+          errorMsg = await res.text();
+        }
+        setMensaje('Error: ' + errorMsg);
+        return;
+      }
+
+      // Leer la respuesta como JSON
+      const data = await res.json();
+      console.log('Respuesta login:', data);  // Para depurar en consola
+
+      setMensaje(data.mensaje);
+
+      if (data.mensaje.includes("exitoso")) {
+        // Redirigir a la ruta correspondiente según el rol
+        if (data.rol === "administrador") {
+          navigate("/admin");
+        } else {
+          navigate("/principal");
+        }
+      }
+    } catch (error) {
+      console.error('Error en fetch:', error);
+      setMensaje("Error en la conexión con el servidor");
     }
   };
 
   return (
     <div className="login-container">
-      {/* Fondo del login */}
       <div className="login-background"></div>
       
       <div className="login-form">
-        {/* Avatar de usuario */}
         <div className="login-avatar">
           <img
             src="https://www.w3schools.com/w3images/avatar2.png"
@@ -41,12 +68,9 @@ function Login() {
           />
         </div>
         
-        {/* Título del formulario */}
         <h2 className="login-title">Bienvenido Imprenta Camiri</h2>
 
-        {/* Formulario de inicio de sesión */}
         <form onSubmit={handleSubmit}>
-          {/* Campo para el nombre de usuario */}
           <input
             type="text"
             value={nombre}
@@ -56,7 +80,6 @@ function Login() {
             required
           />
 
-          {/* Campo para la contraseña */}
           <input
             type="password"
             value={contraseña}
@@ -66,13 +89,11 @@ function Login() {
             required
           />
           
-          {/* Botón para iniciar sesión */}
           <button type="submit" className="login-button">
             Iniciar Sesión
           </button>
         </form>
 
-        {/* Mensaje de error o éxito */}
         {mensaje && (
           <p className={`message ${mensaje.includes("exitoso") ? 'success' : 'error'}`}>
             {mensaje}
@@ -84,4 +105,3 @@ function Login() {
 }
 
 export default Login;
-

@@ -11,8 +11,16 @@ const inventarioRoutes = require('./routes/inventarioRoutes');  // Ruta de Inven
 dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+// Configuración de CORS
+const corsOptions = {
+  origin: 'http://localhost:5173',  // Cambia esto al puerto de tu frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type'],
+};
+
+app.use(cors(corsOptions));  // Configuramos CORS con opciones específicas
+app.use(express.json());  // Para procesar JSON en las solicitudes
 
 // Conectar a MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -20,8 +28,7 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('❌ Error al conectar a MongoDB:', err));
 
 // Usar las rutas de autenticación, clientes, pedidos e inventario
-app.use(express.json());
-app.use('/api', authRoutes);
+
 app.use('/api', usuarioRoutes);
 app.use('/api', clienteRoutes);
 app.use('/api', pedidoRoutes);

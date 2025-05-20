@@ -31,8 +31,9 @@ mongoose.connect(process.env.MONGO_URI)
 
 app.use('/api', usuarioRoutes);
 app.use('/api', clienteRoutes);
-app.use('/api', pedidoRoutes);
-app.use('/api', inventarioRoutes);  // Aquí agregamos la ruta del inventario
+//app.use('/api', pedidoRoutes);
+app.use('/api', inventarioRoutes);
+app.use('/api/pedidos', pedidoRoutes);  // Aquí agregamos la ruta del inventario
 
 // Puerto de la aplicación
 const PORT = process.env.PORT || 3000;

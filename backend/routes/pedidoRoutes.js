@@ -1,18 +1,16 @@
 const express = require('express');
-const Pedido = require('../models/pedido');  // Asegúrate de tener el modelo Pedido
+const Pedido = require('../models/pedido');
 const router = express.Router();
 
-// Ruta para crear un nuevo pedido
-router.post('/pedidos', async (req, res) => {
+// Crear un nuevo pedido
+router.post('/', async (req, res) => {
   try {
     const { cliente, producto, cantidad, estado, precioTotal } = req.body;
 
-    // Verificar si todos los campos necesarios están presentes
     if (!cliente || !producto || !cantidad || !precioTotal) {
       return res.status(400).send('Faltan campos obligatorios');
     }
 
-    // Crear un nuevo pedido
     const nuevoPedido = new Pedido({
       cliente,
       producto,
@@ -21,7 +19,6 @@ router.post('/pedidos', async (req, res) => {
       precioTotal,
     });
 
-    // Guardar el nuevo pedido en la base de datos
     await nuevoPedido.save();
     res.status(201).send('Pedido creado correctamente');
   } catch (err) {
@@ -30,10 +27,21 @@ router.post('/pedidos', async (req, res) => {
   }
 });
 
-// Ruta para obtener todos los pedidos sin los campos 'createdAt', 'updatedAt' y '__v'
-router.get('/pedidos', async (req, res) => {
+// Obtener solo los productos de todos los pedidos (ruta estática: debe ir antes de la dinámica)
+router.get('/productos', async (req, res) => {
   try {
-    const pedidos = await Pedido.find().select('-createdAt -updatedAt -__v');  // Excluye los campos 'createdAt', 'updatedAt' y '__v'
+    const productos = await Pedido.distinct('producto');
+    res.status(200).json(productos);
+  } catch (err) {
+    console.error('Error al obtener productos:', err);
+    res.status(500).send('Error al obtener productos');
+  }
+});
+
+// Obtener todos los pedidos
+router.get('/', async (req, res) => {
+  try {
+    const pedidos = await Pedido.find().select('-createdAt -updatedAt -__v');
     res.status(200).json(pedidos);
   } catch (err) {
     console.error("Error al obtener los pedidos:", err);
@@ -41,8 +49,8 @@ router.get('/pedidos', async (req, res) => {
   }
 });
 
-// Ruta para obtener un pedido específico por ID, sin los campos 'createdAt', 'updatedAt' y '__v'
-router.get('/pedidos/:id', async (req, res) => {
+// Obtener un pedido específico por ID (ruta dinámica: va después de las estáticas)
+router.get('/:id', async (req, res) => {
   try {
     const pedido = await Pedido.findById(req.params.id).select('-createdAt -updatedAt -__v');
     if (!pedido) {
@@ -55,18 +63,16 @@ router.get('/pedidos/:id', async (req, res) => {
   }
 });
 
-// Ruta para actualizar un pedido
-router.put('/pedidos/:id', async (req, res) => {
+// Actualizar un pedido por ID
+router.put('/:id', async (req, res) => {
   try {
     const { cliente, producto, cantidad, estado, precioTotal } = req.body;
 
-    const pedidoActualizado = await Pedido.findByIdAndUpdate(req.params.id, {
-      cliente,
-      producto,
-      cantidad,
-      estado,
-      precioTotal
-    }, { new: true }); // Devuelve el pedido actualizado
+    const pedidoActualizado = await Pedido.findByIdAndUpdate(
+      req.params.id,
+      { cliente, producto, cantidad, estado, precioTotal },
+      { new: true }
+    );
 
     if (!pedidoActualizado) {
       return res.status(404).send('Pedido no encontrado');
@@ -79,8 +85,8 @@ router.put('/pedidos/:id', async (req, res) => {
   }
 });
 
-// Ruta para eliminar un pedido
-router.delete('/pedidos/:id', async (req, res) => {
+// Eliminar un pedido por ID
+router.delete('/:id', async (req, res) => {
   try {
     const pedidoEliminado = await Pedido.findByIdAndDelete(req.params.id);
     if (!pedidoEliminado) {

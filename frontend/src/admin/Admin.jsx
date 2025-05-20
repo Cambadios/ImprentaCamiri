@@ -77,12 +77,16 @@ function Principal() {
 
       {/* Sidebar */}
       <nav className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <button className="principal-button" onClick={() => navigate("/principal")}>
-          <img
-            src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
-            alt="Dashboard"
+        <button
+          className="principal-button"
+          onClick={() => navigate("/dashboard")}  // Aquí cambias la ruta
+          aria-label="Dashboard"
+        >
+        <img
+          src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
+          alt="Dashboard"
           />
-          <span>DASHBOARD</span>
+        <span>DASHBOARD</span>
         </button>
 
         <Link to="/clientes" className="no-link" onClick={() => setMenuOpen(false)}>
@@ -132,15 +136,16 @@ function Principal() {
       <div className="principal-buttons">
         <button
           className="principal-button"
-          onClick={() => navigate("/principal")}
+          onClick={() => navigate("/dashboard")}  // Aquí cambias la ruta
           aria-label="Dashboard"
         >
-          <img
-            src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
-            alt="Dashboard"
+        <img
+          src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
+          alt="Dashboard"
           />
-          <span>DASHBOARD</span>
+        <span>DASHBOARD</span>
         </button>
+
 
         <Link to="/clientes" className="no-link">
           <button className="principal-button">

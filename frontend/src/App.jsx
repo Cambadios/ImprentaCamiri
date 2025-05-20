@@ -4,7 +4,8 @@ import { Routes, Route } from 'react-router-dom';
 
 import Login from "./login/Login";
 import Principal from "./principal/principal";
-import Admin from "./admin/Admin";  // Nuevo componente admin
+import Admin from "./admin/Admin";
+import Dashboard from "./dashboard/DashboardProductos";  // Importa el dashboard
 import ClienteForm from "./clientes/ClienteForm";
 import ClienteList from "./clientes/ClienteList";
 import PedidoForm from "./pedidos/PedidoForm";
@@ -17,7 +18,8 @@ function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/principal" element={<Principal />} />
-      <Route path="/admin" element={<Admin />} />  {/* Ruta para admin */}
+      <Route path="/admin" element={<Admin />} />
+      <Route path="/dashboard" element={<Dashboard />} />  {/* Nueva ruta para dashboard */}
       <Route path="/clientes" element={<ClienteList />} />
       <Route path="/clientes/agregar" element={<ClienteForm />} />
       <Route path="/pedidos" element={<PedidoList />} />

@@ -3,7 +3,7 @@ import React from "react";
 import { Routes, Route } from 'react-router-dom';
 
 import Login from "./login/Login";
-import Principal from "./principal/Principal";
+import Principal from "./principal/principal";
 import Admin from "./admin/Admin";  // Nuevo componente admin
 import ClienteForm from "./clientes/ClienteForm";
 import ClienteList from "./clientes/ClienteList";

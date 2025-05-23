@@ -1,50 +1,98 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Importa el hook de navegación
-import { createCliente } from './ClienteService'; // Importa el servicio para crear el cliente
+import { useNavigate } from 'react-router-dom';
+import './cliente.css'; // Asegúrate de importar el CSS aquí
 
-function ClienteForm() {
+const ClienteForm = () => {
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [fecha_pedido, setFechaPedido] = useState('');
-  const navigate = useNavigate();  // Hook de navegación
+  const [correo, setCorreo] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const clienteData = { nombre, apellido, telefono, fecha_pedido };
+    if (telefono.length !== 8) {
+      alert('El teléfono debe tener exactamente 8 dígitos');
+      return;
+    }
 
-    // Crear cliente
-    await createCliente(clienteData);
+    const cliente = { nombre, apellido, telefono, correo };
 
-    // Redirigir a la lista de clientes después de crear el cliente
+    try {
+      const response = await fetch('http://localhost:3000/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cliente),
+      });
+
+      if (response.ok) {
+        alert('✅ Cliente registrado correctamente');
+        navigate('/clientes');
+      } else {
+        const data = await response.json();
+        alert('❌ Error al registrar: ' + data.message);
+      }
+    } catch (error) {
+      alert('❌ Error al conectar con el servidor');
+    }
+  };
+
+  const handleVolver = () => {
     navigate('/clientes');
   };
 
+  const handleTelefonoChange = (e) => {
+    const valor = e.target.value;
+    if (/^\d{0,8}$/.test(valor)) {
+      setTelefono(valor);
+    }
+  };
+
   return (
-    <div>
-      <h2>Crear Cliente</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Nombre</label>
-          <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-        </div>
-        <div>
-          <label>Apellido</label>
-          <input type="text" value={apellido} onChange={(e) => setApellido(e.target.value)} required />
-        </div>
-        <div>
-          <label>Teléfono</label>
-          <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} required />
-        </div>
-        <div>
-          <label>Fecha de Pedido</label>
-          <input type="date" value={fecha_pedido} onChange={(e) => setFechaPedido(e.target.value)} required />
-        </div>
-        <button type="submit">Crear Cliente</button>
+    <div className="form-container">
+      <button onClick={handleVolver} className="volver-btn">
+        ← Volver a Clientes
+      </button>
+      <h2>Registrar Cliente</h2>
+      <form className="cliente-form" onSubmit={handleSubmit}>
+        <label>Nombre:</label>
+        <input
+          type="text"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          required
+        />
+
+        <label>Apellido:</label>
+        <input
+          type="text"
+          value={apellido}
+          onChange={(e) => setApellido(e.target.value)}
+          required
+        />
+
+        <label>Teléfono (8 dígitos):</label>
+        <input
+          type="text"
+          value={telefono}
+          onChange={handleTelefonoChange}
+          required
+          placeholder="+591"
+        />
+
+        <label>Correo (opcional):</label>
+        <input
+          type="email"
+          value={correo}
+          onChange={(e) => setCorreo(e.target.value)}
+          placeholder="correo@gmail.com"
+        />
+
+        <button type="submit">Registrar Cliente</button>
       </form>
     </div>
   );
-}
+};
 
 export default ClienteForm;

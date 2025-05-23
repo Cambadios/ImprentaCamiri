@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const pedidoSchema = new mongoose.Schema({
   cliente: {
-    type: String,  // Ahora usamos un nombre de cliente en lugar de un ID
+    type: String,
     required: true,
   },
   producto: {
@@ -13,16 +13,30 @@ const pedidoSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  estado: {
-    type: String,
-    enum: ['Pendiente', 'En Proceso', 'Completado', 'Entregado'],
-    default: 'Pendiente',
-  },
   precioTotal: {
     type: Number,
     required: true,
   },
-}, { timestamps: true });
+  pagoCliente: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
+  estado: {
+    type: String,
+    required: true,
+    enum: ['Pendiente', 'En proceso', 'Entregado', 'Cancelado'],
+    default: 'Pendiente',
+  },
+  fechaEntrega: {
+    type: Date,
+    required: false,
+  },
+  fechaRegistro: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 const Pedido = mongoose.model('Pedido', pedidoSchema);
 

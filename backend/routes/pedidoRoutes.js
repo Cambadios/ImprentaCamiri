@@ -5,7 +5,15 @@ const router = express.Router();
 // Crear un nuevo pedido
 router.post('/', async (req, res) => {
   try {
-    const { cliente, producto, cantidad, estado, precioTotal } = req.body;
+    const {
+      cliente,
+      producto,
+      cantidad,
+      estado,
+      precioTotal,
+      pagoCliente,
+      fechaEntrega
+    } = req.body;
 
     if (!cliente || !producto || !cantidad || !precioTotal) {
       return res.status(400).send('Faltan campos obligatorios');
@@ -17,6 +25,8 @@ router.post('/', async (req, res) => {
       cantidad,
       estado,
       precioTotal,
+      pagoCliente,
+      fechaEntrega
     });
 
     await nuevoPedido.save();
@@ -27,7 +37,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Obtener solo los productos de todos los pedidos (ruta estática: debe ir antes de la dinámica)
+// Obtener solo los productos de todos los pedidos
 router.get('/productos', async (req, res) => {
   try {
     const productos = await Pedido.distinct('producto');
@@ -41,7 +51,7 @@ router.get('/productos', async (req, res) => {
 // Obtener todos los pedidos
 router.get('/', async (req, res) => {
   try {
-    const pedidos = await Pedido.find().select('-createdAt -updatedAt -__v');
+    const pedidos = await Pedido.find().select('-__v');
     res.status(200).json(pedidos);
   } catch (err) {
     console.error("Error al obtener los pedidos:", err);
@@ -49,10 +59,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Obtener un pedido específico por ID (ruta dinámica: va después de las estáticas)
+// Obtener un pedido específico por ID
 router.get('/:id', async (req, res) => {
   try {
-    const pedido = await Pedido.findById(req.params.id).select('-createdAt -updatedAt -__v');
+    const pedido = await Pedido.findById(req.params.id).select('-__v');
     if (!pedido) {
       return res.status(404).send('Pedido no encontrado');
     }
@@ -66,11 +76,27 @@ router.get('/:id', async (req, res) => {
 // Actualizar un pedido por ID
 router.put('/:id', async (req, res) => {
   try {
-    const { cliente, producto, cantidad, estado, precioTotal } = req.body;
+    const {
+      cliente,
+      producto,
+      cantidad,
+      estado,
+      precioTotal,
+      pagoCliente,
+      fechaEntrega
+    } = req.body;
 
     const pedidoActualizado = await Pedido.findByIdAndUpdate(
       req.params.id,
-      { cliente, producto, cantidad, estado, precioTotal },
+      {
+        cliente,
+        producto,
+        cantidad,
+        estado,
+        precioTotal,
+        pagoCliente,
+        fechaEntrega
+      },
       { new: true }
     );
 

@@ -1,18 +1,40 @@
-/* Estilos Generales */
-div {
-  margin-bottom: 20px;
+/* Estilos para ClienteForm */
+.form-container {
+  max-width: 500px;
+  margin: 30px auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
   text-align: center;
   color: #3e3a2f;
   font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.cliente-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cliente-form label {
   font-weight: bold;
+}
+
+.cliente-form input {
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
 button {
   padding: 10px 20px;
-  background-color: #cbb88a; /* Beige más oscuro */
+  background-color: #cbb88a;
   border: none;
   border-radius: 5px;
   color: white;
@@ -22,109 +44,23 @@ button {
 }
 
 button:hover {
-  background-color: #a85c39; /* Cambio a un color café */
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-/* Estilo para los inputs del formulario */
-input {
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  width: 100%;
-}
-
-label {
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-/* Estilos para el listado de clientes */
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-ul li {
-  background-color: #f4f4f4;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1.1rem;
-}
-
-ul li button {
-  background-color: #ff4d4d;
-  font-size: 0.9rem;
-  padding: 8px 12px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  color: white;
-  transition: background-color 0.3s ease;
-}
-
-ul li button:hover {
-  background-color: #ff1a1a;
-}
-
-/* Estilos para Volver al Principal */
-.volver-principal {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.volver-principal a {
-  text-decoration: none;
-  color: #3e3a2f;
-  font-weight: bold;
-  font-size: 1.1rem;
-  display: inline-block;
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #cbb88a;
-  border-radius: 5px;
-}
-
-.volver-principal a:hover {
   background-color: #a85c39;
 }
 
-/* Estilos específicos para el componente ClienteForm y ClienteEdit */
-form {
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+/* Botón especial para volver */
+.volver-btn {
+  background-color: #6c757d;
+  margin-bottom: 20px;
 }
 
-form input {
-  padding: 12px;
-  font-size: 1rem;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  margin-top: 5px;
+.volver-btn:hover {
+  background-color: #5a6268;
 }
 
-/* Responsive para pantallas pequeñas */
+/* Responsive */
 @media (max-width: 600px) {
-  form {
+  .form-container {
     width: 90%;
-  }
-
-  .voler-principal a {
-    font-size: 1rem;
-    padding: 8px 16px;
+    padding: 15px;
   }
 }

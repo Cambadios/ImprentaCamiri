@@ -3,12 +3,24 @@ const Inventario = require('../models/inventario');
 // Crear un nuevo producto en inventario
 exports.createProducto = async (req, res) => {
   try {
-    const { nombre, cantidad, descripcion } = req.body;
+    const {
+      nombre,
+      cantidad,
+      descripcion,
+      esPorDocena,
+      numDocenas,
+      imagenUrl
+    } = req.body;
+
     const inventario = new Inventario({
       nombre,
       cantidad,
-      descripcion
+      descripcion,
+      esPorDocena: esPorDocena || false,
+      numDocenas: esPorDocena ? numDocenas || 0 : 0,
+      imagenUrl
     });
+
     await inventario.save();
     res.status(201).json(inventario);
   } catch (error) {
@@ -30,8 +42,28 @@ exports.getProductos = async (req, res) => {
 exports.updateProducto = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, cantidad, descripcion } = req.body;
-    const producto = await Inventario.findByIdAndUpdate(id, { nombre, cantidad, descripcion }, { new: true });
+    const {
+      nombre,
+      cantidad,
+      descripcion,
+      esPorDocena,
+      numDocenas,
+      imagenUrl
+    } = req.body;
+
+    const producto = await Inventario.findByIdAndUpdate(
+      id,
+      {
+        nombre,
+        cantidad,
+        descripcion,
+        esPorDocena: esPorDocena || false,
+        numDocenas: esPorDocena ? numDocenas || 0 : 0,
+        imagenUrl
+      },
+      { new: true }
+    );
+
     res.status(200).json(producto);
   } catch (error) {
     res.status(500).json({ message: error.message });

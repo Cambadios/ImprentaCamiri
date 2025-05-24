@@ -1,4 +1,4 @@
-/* Estilos para ClienteForm */
+/* Contenedor del formulario */
 .form-container {
   max-width: 500px;
   margin: 30px auto;
@@ -8,6 +8,7 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
+/* Título */
 h2 {
   text-align: center;
   color: #3e3a2f;
@@ -15,23 +16,33 @@ h2 {
   margin-bottom: 20px;
 }
 
+/* Formulario */
 .cliente-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* Etiquetas */
 .cliente-form label {
   font-weight: bold;
 }
 
+/* Inputs */
 .cliente-form input {
   padding: 10px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 5px;
+  /* Color para placeholder */
 }
 
+.cliente-form input::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+/* Botones */
 button {
   padding: 10px 20px;
   background-color: #cbb88a;
@@ -51,10 +62,18 @@ button:hover {
 .volver-btn {
   background-color: #6c757d;
   margin-bottom: 20px;
+  color: white;
 }
 
 .volver-btn:hover {
   background-color: #5a6268;
+}
+
+/* Mensajes de error */
+.error-message {
+  color: #dc3545;
+  margin-bottom: 10px;
+  font-weight: bold;
 }
 
 /* Responsive */

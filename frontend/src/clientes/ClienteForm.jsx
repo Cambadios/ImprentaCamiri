@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './cliente.css'; // Asegúrate de importar el CSS aquí
+import './cliente.css';
 
 const ClienteForm = () => {
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [telefono, setTelefono] = useState('');
   const [correo, setCorreo] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (telefono.length !== 8) {
-      alert('El teléfono debe tener exactamente 8 dígitos');
+      setError('El teléfono debe tener exactamente 8 dígitos');
       return;
     }
 
@@ -31,10 +32,10 @@ const ClienteForm = () => {
         navigate('/clientes');
       } else {
         const data = await response.json();
-        alert('❌ Error al registrar: ' + data.message);
+        setError(data.message || 'Error al registrar cliente');
       }
     } catch (error) {
-      alert('❌ Error al conectar con el servidor');
+      setError('Error al conectar con el servidor');
     }
   };
 
@@ -56,11 +57,14 @@ const ClienteForm = () => {
       </button>
       <h2>Registrar Cliente</h2>
       <form className="cliente-form" onSubmit={handleSubmit}>
+        {error && <p className="error-message">{error}</p>}
+
         <label>Nombre:</label>
         <input
           type="text"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
+          placeholder="Nombre completo"
           required
         />
 
@@ -69,6 +73,7 @@ const ClienteForm = () => {
           type="text"
           value={apellido}
           onChange={(e) => setApellido(e.target.value)}
+          placeholder="Apellido completo"
           required
         />
 
@@ -78,7 +83,7 @@ const ClienteForm = () => {
           value={telefono}
           onChange={handleTelefonoChange}
           required
-          placeholder="+591"
+          placeholder="Ej: 71234567"
         />
 
         <label>Correo (opcional):</label>
@@ -86,7 +91,7 @@ const ClienteForm = () => {
           type="email"
           value={correo}
           onChange={(e) => setCorreo(e.target.value)}
-          placeholder="correo@gmail.com"
+          placeholder="cliente@ejemplo.com"
         />
 
         <button type="submit">Registrar Cliente</button>

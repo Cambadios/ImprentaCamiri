@@ -12,6 +12,8 @@ import PedidoForm from "./pedidos/PedidoForm";
 import PedidoList from "./pedidos/PedidoList";
 import ProductoForm from './inventario/ProductoForm';
 import ProductoList from './inventario/ProductoList';
+import UsuarioList from './usuarios/UsuarioList';
+import UsuarioForm from './usuarios/UsuarioForm';
 
 function App() {
   return (
@@ -26,6 +28,9 @@ function App() {
       <Route path="/pedidos/agregar" element={<PedidoForm />} />
       <Route path="/inventario" element={<ProductoList />} />
       <Route path="/inventario/agregar" element={<ProductoForm />} />
+      <Route path="/usuarios" element={<UsuarioList />} />
+      <Route path="/usuarios/agregar" element={<UsuarioForm />} />
+      <Route path="/usuarios/editar/:id" element={<UsuarioForm />} />
     </Routes>
   );
 }

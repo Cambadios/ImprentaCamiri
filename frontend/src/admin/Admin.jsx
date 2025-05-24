@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Admin.css";
+import Admin from "../principal/principal";
 
 const images = [
   'https://i.pinimg.com/736x/17/a0/3a/17a03ace53bc30adaa41076ecef390db.jpg',
@@ -79,14 +80,14 @@ function Principal() {
       <nav className={`sidebar ${menuOpen ? "open" : ""}`}>
         <button
           className="principal-button"
-          onClick={() => navigate("/dashboard")}  // Aquí cambias la ruta
+          onClick={() => navigate("/dashboard")}
           aria-label="Dashboard"
         >
-        <img
-          src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
-          alt="Dashboard"
+          <img
+            src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
+            alt="Dashboard"
           />
-        <span>DASHBOARD</span>
+          <span>DASHBOARD</span>
         </button>
 
         <Link to="/clientes" className="no-link" onClick={() => setMenuOpen(false)}>
@@ -119,6 +120,17 @@ function Principal() {
           </button>
         </Link>
 
+        {/* Nuevo enlace Usuarios */}
+        <Link to="/usuarios" className="no-link" onClick={() => setMenuOpen(false)}>
+          <button className="principal-button">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
+              alt="Usuarios"
+            />
+            <span>USUARIOS</span>
+          </button>
+        </Link>
+
         <button className="principal-button">
           <img
             src="https://cdn-icons-png.flaticon.com/512/5674/5674015.png"
@@ -136,16 +148,15 @@ function Principal() {
       <div className="principal-buttons">
         <button
           className="principal-button"
-          onClick={() => navigate("/dashboard")}  // Aquí cambias la ruta
+          onClick={() => navigate("/dashboard")}
           aria-label="Dashboard"
         >
-        <img
-          src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
-          alt="Dashboard"
+          <img
+            src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
+            alt="Dashboard"
           />
-        <span>DASHBOARD</span>
+          <span>DASHBOARD</span>
         </button>
-
 
         <Link to="/clientes" className="no-link">
           <button className="principal-button">
@@ -174,6 +185,17 @@ function Principal() {
               alt="Inventario"
             />
             <span>INVENTARIO</span>
+          </button>
+        </Link>
+
+        {/* Botón Usuarios */}
+        <Link to="/usuarios" className="no-link">
+          <button className="principal-button">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
+              alt="Usuarios"
+            />
+            <span>USUARIOS</span>
           </button>
         </Link>
 

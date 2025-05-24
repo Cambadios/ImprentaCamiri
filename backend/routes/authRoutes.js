@@ -1,30 +1,30 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const Usuario = require('../models/usuario'); // Modelo de usuario
+const Usuario = require('../models/usuario'); // Asegúrate que esta ruta es correcta
 const router = express.Router();
 
-// Ruta para Login de usuario
+// Ruta para login
 router.post('/login', async (req, res) => {
-  const { nombre, contraseña } = req.body;
+  const { correo, contraseña } = req.body;
 
   try {
-    // Buscar el usuario por nombre
-    const usuario = await Usuario.findOne({ nombre });
+    // Buscar usuario por correo
+    const usuario = await Usuario.findOne({ correo });
     if (!usuario) {
-      return res.status(400).send('Usuario no encontrado');
+      return res.status(400).json({ mensaje: 'Usuario no encontrado' });
     }
 
-    // Comparar las contraseñas
+    // Verificar contraseña
     const coincide = await bcrypt.compare(contraseña, usuario.contraseña);
     if (!coincide) {
-      return res.status(401).send('Contraseña incorrecta');
+      return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
     }
 
-    // Si el login es exitoso
-    res.send('Login exitoso');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error en el servidor');
+    // Login exitoso, responder con rol
+    res.json({ mensaje: 'Login exitoso', rol: usuario.rol || 'usuario_normal' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: 'Error en el servidor' });
   }
 });
 

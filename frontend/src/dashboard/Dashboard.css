@@ -1,0 +1,36 @@
+/* Estilos generales del contenedor del Dashboard */
+.dashboard-container {
+  display: flex;
+  gap: 50px; /* Espacio adicional entre los dashboards */
+  justify-content: space-between;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+
+/* Estilo para cada sección del dashboard */
+.dashboard-section {
+  flex: 1;
+  min-width: 320px; /* Evita que se comprima demasiado */
+  max-width: 600px; /* Tamaño máximo de cada dashboard */
+  margin-bottom: 40px; /* Espacio entre los dashboards */
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Título principal */
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+  color: #333;
+}
+
+/* Títulos de cada dashboard */
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: #333;
+}

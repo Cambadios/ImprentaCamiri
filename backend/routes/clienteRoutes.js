@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Cliente = require('../models/cliente');
 
-// Controlador para crear cliente con validación
-router.post('/clientes', async (req, res) => {
+// Crear cliente con validación
+router.post('/', async (req, res) => {
   try {
     const { nombre, apellido, telefono, correo } = req.body;
 
@@ -35,7 +35,7 @@ router.post('/clientes', async (req, res) => {
 });
 
 // Obtener todos los clientes
-router.get('/clientes', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const clientes = await Cliente.find();
     res.status(200).json(clientes);
@@ -46,7 +46,7 @@ router.get('/clientes', async (req, res) => {
 });
 
 // Obtener cliente por ID
-router.get('/clientes/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const cliente = await Cliente.findById(req.params.id);
     if (!cliente) return res.status(404).json({ message: 'Cliente no encontrado' });
@@ -57,8 +57,8 @@ router.get('/clientes/:id', async (req, res) => {
   }
 });
 
-// Actualizar cliente con validación de duplicados
-router.put('/clientes/:id', async (req, res) => {
+// Actualizar cliente con validación
+router.put('/:id', async (req, res) => {
   try {
     const { nombre, apellido, telefono, correo } = req.body;
 
@@ -92,7 +92,7 @@ router.put('/clientes/:id', async (req, res) => {
 });
 
 // Eliminar cliente
-router.delete('/clientes/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const eliminado = await Cliente.findByIdAndDelete(req.params.id);
     if (!eliminado) return res.status(404).json({ message: 'Cliente no encontrado' });

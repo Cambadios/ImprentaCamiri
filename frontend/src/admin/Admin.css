@@ -1,3 +1,4 @@
+/* Contenedor principal */
 .principal-container {
   position: relative;
   min-height: 100vh;
@@ -10,8 +11,20 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
+  transition: margin-left 0.3s ease; /* Transición suave cuando cambia el margen */
 }
 
+/* Cuando la barra lateral está abierta, desplazamos el contenido hacia la derecha */
+.sidebar.open ~ .principal-container {
+  margin-left: 200px; /* Desplazamos el contenido 200px hacia la derecha */
+}
+
+/* Cuando la barra lateral está cerrada, el contenido vuelve a su posición original */
+.sidebar.closed ~ .principal-container {
+  margin-left: 0;
+}
+
+/* Fondo de las imágenes */
 .bg-image-1,
 .bg-image-2,
 .bg-image-3,
@@ -41,6 +54,7 @@
 .bg-image-5 { background-image: url('https://i.pinimg.com/736x/65/af/c7/65afc7acdfe22a457e97e5c757360193.jpg'); }
 .bg-image-6 { background-image: url('https://i.pinimg.com/736x/5f/20/8e/5f208e18db4f240785d1d4ce88b99a2c.jpg'); }
 
+/* Estilos del encabezado */
 .principal-header {
   position: relative;
   z-index: 40;
@@ -76,47 +90,52 @@
   font-weight: 400;
 }
 
+/* Botones principales */
 .principal-buttons {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 30px;
   flex-wrap: wrap;
-  width: 100%; /* o un ancho específico */
+  width: 100%;
   margin-top: 120px;
 }
 
-/* ----------- BARRA LATERAL MODIFICADA ----------- */
+/* Barra lateral */
 .sidebar {
   position: fixed;
   top: 0;
   left: -200px;
   width: 200px;
   height: 100%;
-  background-color: #d6c79c; /* Beige medio entre oscuro y claro */
-  color: #3e3a2f; /* Café oscuro para texto */
+  background-color: #d6c79c; /* Beige */
+  color: #3e3a2f; /* Color de texto */
   padding: 20px 10px;
   transition: left 0.3s ease;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centrar contenido */
+  align-items: center;
   z-index: 50;
   box-shadow: 2px 0 12px rgba(0,0,0,0.2);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Mostrar sidebar cuando está abierta */
+/* Barra lateral abierta */
 .sidebar.open {
-  left: 0;
+  left: 0; /* Mueve la barra lateral a la vista */
 }
 
-/* Texto en la parte superior de la barra lateral */
+/* Barra lateral cerrada */
+.sidebar.closed {
+  left: -200px; /* Mueve la barra lateral fuera de la vista */
+}
+
+/* Título en la barra lateral */
 .sidebar::before {
   content: "IMPRENTA CAMIRI";
   display: block;
   font-size: 1.8rem;
   font-weight: 700;
-  color: #3e3a2f; /* Café */
+  color: #3e3a2f;
   margin-bottom: 25px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   user-select: none;
@@ -124,15 +143,15 @@
   width: 100%;
 }
 
-/* Botones laterales modificados */
+/* Estilos de los botones de la barra lateral */
 .principal-button {
   background-color: #fff;
   border: 1px solid #bfb49d;
   border-radius: 8px;
   padding: 8px;
-  width: 140px; /* Un poco más pequeño */
+  width: 140px;
   text-align: center;
-  font-size: 14px; /* Más pequeño */
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
@@ -142,7 +161,7 @@
   align-items: center;
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
   margin-bottom: 12px;
-  color: #3e3a2f; /* Texto café */
+  color: #3e3a2f;
 }
 
 .principal-button:hover {
@@ -153,25 +172,23 @@
 }
 
 .principal-button img {
-  width: 35px; /* Imagen más pequeña */
+  width: 35px;
   height: 35px;
   object-fit: cover;
   margin-bottom: 5px;
-  cursor: pointer;
 }
 
 .principal-button span {
   margin-top: 5px;
   font-size: 13px;
   font-weight: 700;
-  cursor: pointer;
   color: #3e3a2f;
 }
 
-/* Botón cerrar sesión dentro de sidebar */
+/* Cerrar sesión */
 .logout-button {
   margin-top: 20px;
-  background-color: #a85c39; /* Café más oscuro */
+  background-color: #a85c39;
   color: white;
   padding: 10px 20px;
   font-size: 14px;
@@ -187,7 +204,7 @@
   background-color: #6e3f22;
 }
 
-/* Para los enlaces que no se deben decorar ni cambiar color */
+/* Para los enlaces que no se deben decorar */
 .no-link {
   text-decoration: none;
   color: inherit;
@@ -222,28 +239,7 @@
   transform: rotate(45deg) translate(-5px, -6px);
 }
 
-@media (max-width: 600px) {
-  .principal-buttons {
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 80px;
-  }
-
-  .principal-button {
-    width: 100%;
-    max-width: 300px;
-  }
-
-  .sidebar {
-    width: 150px;
-  }
-
-  .principal-button {
-    width: 130px;
-  }
-}
-
-/* ------------ Estilos para carrusel -------------- */
+/* Carrusel */
 .carousel-container {
   position: relative;
   margin-top: 40px;
@@ -259,7 +255,6 @@
   overflow: hidden;
   margin-left: auto;
   margin-right: auto;
-  z-index: 10;
 }
 
 .carousel-image {
@@ -267,7 +262,6 @@
   max-height: 100%;
   border-radius: 12px;
   object-fit: cover;
-  user-select: none;
 }
 
 .carousel-btn {
@@ -300,4 +294,44 @@
 
 .next-btn {
   right: 15px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .principal-buttons {
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 80px;
+  }
+
+  .principal-button {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .sidebar {
+    width: 150px;
+  }
+
+  .principal-button {
+    width: 130px;
+  }
+}
+/* Estilo para el botón de abrir/cerrar la barra lateral */
+.sidebar-toggle-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 10px 15px;
+  background-color: #a85c39; /* color café oscuro */
+  color: white;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.sidebar-toggle-button:hover {
+  background-color: #6e3f22;
 }

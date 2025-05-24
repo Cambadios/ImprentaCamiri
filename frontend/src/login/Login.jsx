@@ -1,6 +1,7 @@
+// /src/login/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import './Login.css';
+import './Login.css';  // Asegúrate de que este archivo exista para estilos
 
 function Login() {
   const [correo, setCorreo] = useState("");
@@ -13,7 +14,7 @@ function Login() {
     setMensaje('Intentando conectar...');
 
     try {
-      const res = await fetch("http://localhost:3000/api/login", {
+      const res = await fetch("http://localhost:3000/api/usuarios/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo, contraseña }),
@@ -21,7 +22,7 @@ function Login() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        setMensaje('Error: ' + (errorData.mensaje || 'Error desconocido'));
+        setMensaje('Error: ' + errorData.mensaje);
         return;
       }
 
@@ -31,10 +32,8 @@ function Login() {
       if (data.mensaje.includes("exitoso")) {
         if (data.rol === "administrador") {
           navigate("/admin");
-        } else if (data.rol === "usuario_normal") {
-          navigate("/principal");
         } else {
-          navigate("/admin"); // fallback
+          navigate("/principal");
         }
       }
     } catch (error) {

@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api/usuario';
+const API_URL = 'http://localhost:3000/api/usuarios';
 
 // Obtener todos los usuarios
 export const getUsuarios = async () => {

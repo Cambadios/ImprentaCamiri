@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
-const ProductoForm = () => {
+const InventarioForm = () => {
   const [nombre, setNombre] = useState('');
   const [cantidad, setCantidad] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -24,14 +24,14 @@ const ProductoForm = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:3000/api/producto', {
+      const response = await fetch('http://localhost:3000/api/inventario', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(producto),
       });
 
       if (response.ok) {
-        alert('✅ Producto agregado correctamente');
+        alert('✅ Producto agregado correctamente al inventario');
         navigate('/inventario');
       } else {
         const data = await response.json();
@@ -43,15 +43,8 @@ const ProductoForm = () => {
   };
 
   return (
-    <div style={{
-      maxWidth: '500px',
-      margin: '30px auto',
-      padding: '20px',
-      backgroundColor: '#f4f4f4',
-      borderRadius: '10px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-    }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Agregar Producto</h2>
+    <div style={containerStyle}>
+      <h2 style={headerStyle}>Agregar Producto al Inventario</h2>
 
       <form onSubmit={handleSubmit}>
         <label>Nombre del producto:</label>
@@ -63,7 +56,7 @@ const ProductoForm = () => {
           style={inputStyle}
         />
 
-        <label>Unidad:</label>
+        <label>Cantidad:</label>
         <input
           type="number"
           value={cantidad}
@@ -81,6 +74,7 @@ const ProductoForm = () => {
           />
           ¿El producto es por docena?
         </label>
+
         {esPorDocena && (
           <>
             <label>Cantidad de docenas:</label>
@@ -100,7 +94,7 @@ const ProductoForm = () => {
           onChange={(e) => setDescripcion(e.target.value)}
           required
           style={{ ...inputStyle, height: '80px' }}
-        ></textarea>
+        />
 
         <label>URL de la imagen:</label>
         <input
@@ -111,14 +105,14 @@ const ProductoForm = () => {
           style={inputStyle}
         />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+        <div style={buttonContainerStyle}>
           <Link to="/inventario">
-            <button type="button" style={{ ...buttonStyle, backgroundColor: '#888' }}>
+            <button type="button" style={buttonCancelStyle}>
               Volver al Inventario
             </button>
           </Link>
 
-          <button type="submit" style={{ ...buttonStyle, backgroundColor: '#007bff' }}>
+          <button type="submit" style={buttonSubmitStyle}>
             Agregar
           </button>
         </div>
@@ -127,21 +121,51 @@ const ProductoForm = () => {
   );
 };
 
-// Estilos reutilizables
+// Estilos
+const containerStyle = {
+  maxWidth: '500px',
+  margin: '30px auto',
+  padding: '20px',
+  backgroundColor: '#f4f4f4',
+  borderRadius: '10px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+};
+
+const headerStyle = {
+  textAlign: 'center',
+  marginBottom: '20px'
+};
+
 const inputStyle = {
   width: '100%',
   padding: '10px',
   marginBottom: '15px',
   borderRadius: '5px',
-  border: '1px solid #ccc',
+  border: '1px solid #ccc'
 };
 
-const buttonStyle = {
+const buttonContainerStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  marginTop: '20px'
+};
+
+const buttonCancelStyle = {
   padding: '10px 20px',
+  backgroundColor: '#888',
   color: '#fff',
   border: 'none',
   borderRadius: '5px',
   cursor: 'pointer'
 };
 
-export default ProductoForm;
+const buttonSubmitStyle = {
+  padding: '10px 20px',
+  backgroundColor: '#007bff',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer'
+};
+
+export default InventarioForm;

@@ -2,18 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import VolverPrincipal from '../comunes/VolverPrincipal';
 
-const ProductoList = () => {
+const InventarioList = () => {
   const [productos, setProductos] = useState([]);
   const [productoEditando, setProductoEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
 
   const fetchProductos = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/productos');
+      const response = await fetch('http://localhost:3000/api/inventario');
       const data = await response.json();
       setProductos(data);
     } catch (error) {
-      alert('Error al obtener los productos');
+      alert('Error al obtener los productos del inventario');
     }
   };
 
@@ -21,7 +21,7 @@ const ProductoList = () => {
     if (!window.confirm('¿Seguro que deseas eliminar este producto?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/producto/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/inventario/${id}`, {
         method: 'DELETE',
       });
 
@@ -48,7 +48,7 @@ const ProductoList = () => {
 
   const guardarCambios = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/producto/${productoEditando._id}`, {
+      const response = await fetch(`http://localhost:3000/api/inventario/${productoEditando._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productoEditando),
@@ -85,7 +85,7 @@ const ProductoList = () => {
       {productos.length === 0 ? (
         <p style={{ textAlign: 'center' }}>No hay productos disponibles.</p>
       ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center' }}>
+        <div style={listContainerStyle}>
           {productos.map((producto) => (
             <div key={producto._id} style={cardStyle}>
               {producto.imagenUrl ? (
@@ -95,17 +95,16 @@ const ProductoList = () => {
                   style={imagenEstilo}
                 />
               ) : (
-                <div style={{ ...imagenEstilo, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
+                <div style={imagenPlaceholderStyle}>
                   Sin imagen
                 </div>
               )}
               <h3>{producto.nombre}</h3>
-              <p><strong>Unidad:</strong> {producto.cantidad}</p>
+              <p><strong>Cantidad:</strong> {producto.cantidad}</p>
               {producto.esPorDocena && (
-              <p><strong>Docenas:</strong> {producto.numDocenas}</p>
+                <p><strong>Docenas:</strong> {producto.numDocenas}</p>
               )}
               <p><strong>Descripción:</strong> {producto.descripcion}</p>
-
 
               <button
                 onClick={() => eliminarProducto(producto._id)}
@@ -139,7 +138,7 @@ const ProductoList = () => {
               style={inputStyle}
             />
 
-            <label>Unidad:</label>
+            <label>Cantidad:</label>
             <input
               type="number"
               value={productoEditando.cantidad}
@@ -180,9 +179,7 @@ const ProductoList = () => {
               value={productoEditando.descripcion}
               onChange={(e) => setProductoEditando({ ...productoEditando, descripcion: e.target.value })}
               style={{ ...inputStyle, height: '60px' }}
-            ></textarea>
-
-
+            />
 
             <label>URL Imagen:</label>
             <input
@@ -192,7 +189,7 @@ const ProductoList = () => {
               style={inputStyle}
             />
 
-            <div style={{ marginTop: '20px', textAlign: 'right' }}>
+            <div style={modalButtonContainerStyle}>
               <button onClick={cerrarModal} style={{ ...buttonStyle, backgroundColor: '#6c757d' }}>
                 Cancelar
               </button>
@@ -207,7 +204,7 @@ const ProductoList = () => {
   );
 };
 
-// 🎨 Estilos
+// Estilos
 const buttonStyle = {
   padding: '10px 15px',
   borderRadius: '5px',
@@ -217,12 +214,11 @@ const buttonStyle = {
   cursor: 'pointer'
 };
 
-const inputStyle = {
-  width: '100%',
-  padding: '8px',
-  margin: '5px 0 10px 0',
-  borderRadius: '5px',
-  border: '1px solid #ccc'
+const listContainerStyle = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '20px',
+  justifyContent: 'center'
 };
 
 const cardStyle = {
@@ -241,6 +237,22 @@ const imagenEstilo = {
   borderRadius: '8px',
   marginBottom: '10px',
   backgroundColor: '#e0e0e0'
+};
+
+const imagenPlaceholderStyle = {
+  ...imagenEstilo,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#666'
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '8px',
+  margin: '5px 0 10px 0',
+  borderRadius: '5px',
+  border: '1px solid #ccc'
 };
 
 const modalOverlayStyle = {
@@ -263,4 +275,9 @@ const modalStyle = {
   boxShadow: '0 0 10px rgba(0,0,0,0.3)'
 };
 
-export default ProductoList;
+const modalButtonContainerStyle = {
+  marginTop: '20px',
+  textAlign: 'right'
+};
+
+export default InventarioList;

@@ -61,8 +61,12 @@ exports.updateProducto = async (req, res) => {
         numDocenas: esPorDocena ? numDocenas || 0 : 0,
         imagenUrl
       },
-      { new: true }
+      { new: true, runValidators: true }
     );
+
+    if (!producto) {
+      return res.status(404).json({ message: 'Producto no encontrado' });
+    }
 
     res.status(200).json(producto);
   } catch (error) {
@@ -74,8 +78,13 @@ exports.updateProducto = async (req, res) => {
 exports.deleteProducto = async (req, res) => {
   try {
     const { id } = req.params;
-    await Inventario.findByIdAndDelete(id);
-    res.status(200).json({ message: 'Producto eliminado' });
+    const producto = await Inventario.findByIdAndDelete(id);
+
+    if (!producto) {
+      return res.status(404).json({ message: 'Producto no encontrado' });
+    }
+
+    res.status(200).json({ message: 'Producto eliminado correctamente' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

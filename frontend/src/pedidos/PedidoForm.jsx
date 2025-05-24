@@ -12,24 +12,39 @@ const getClientes = async () => {
   }
 };
 
+const getProductos = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/api/productos');
+    return await response.json();
+  } catch (error) {
+    console.error('Error al obtener productos', error);
+    return [];
+  }
+};
+
 const PedidoForm = () => {
   const [cliente, setCliente] = useState('');
   const [producto, setProducto] = useState('');
-  const [cantidad, setCantidad] = useState('');
-  const [precioTotal, setPrecioTotal] = useState('');
+  const [cantidad, setCantidad] = useState(1);
+  const [precioTotal, setPrecioTotal] = useState(0);
   const [pagoCliente, setPagoCliente] = useState('');
   const [estado, setEstado] = useState('Pendiente');
   const [fechaEntrega, setFechaEntrega] = useState('');
   const [clientes, setClientes] = useState([]);
+  const [productos, setProductos] = useState([]);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchClientes = async () => {
-      const data = await getClientes();
-      setClientes(data);
+    const fetchData = async () => {
+      const dataClientes = await getClientes();
+      setClientes(dataClientes);
+
+      const dataProductos = await getProductos();
+      setProductos(dataProductos);
     };
-    fetchClientes();
+
+    fetchData();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -58,10 +73,23 @@ const PedidoForm = () => {
     navigate('/pedidos');
   };
 
+  const handleProductoChange = (e) => {
+    const productoSeleccionado = productos.find(p => p._id === e.target.value);
+    setProducto(productoSeleccionado._id);
+    setPrecioTotal(productoSeleccionado.precioUnitario * cantidad);
+  };
+
   const calcularSaldo = () => {
     const total = parseFloat(precioTotal) || 0;
     const pago = parseFloat(pagoCliente) || 0;
     return total - pago;
+  };
+
+  const handleCantidadChange = (e) => {
+    const nuevaCantidad = e.target.value;
+    setCantidad(nuevaCantidad);
+    const productoSeleccionado = productos.find(p => p._id === producto);
+    setPrecioTotal(productoSeleccionado ? productoSeleccionado.precioUnitario * nuevaCantidad : 0);
   };
 
   return (
@@ -87,29 +115,35 @@ const PedidoForm = () => {
         </datalist>
 
         <label>Producto:</label>
-        <input
-          type="text"
+        <select
           value={producto}
-          onChange={(e) => setProducto(e.target.value)}
+          onChange={handleProductoChange}
           required
           style={inputStyle}
-        />
+        >
+          <option value="">Selecciona un producto</option>
+          {productos.map((p) => (
+            <option key={p._id} value={p._id}>
+              {p.nombre} - Bs {p.precioUnitario}
+            </option>
+          ))}
+        </select>
 
         <label>Cantidad:</label>
         <input
           type="number"
           value={cantidad}
-          onChange={(e) => setCantidad(e.target.value)}
+          onChange={handleCantidadChange}
           required
           style={inputStyle}
+          min="1"
         />
 
         <label>Precio Total (Bs):</label>
         <input
-          type="number"
-          value={precioTotal}
-          onChange={(e) => setPrecioTotal(e.target.value)}
-          required
+          type="text"
+          value={`Bs ${precioTotal.toFixed(2)}`}
+          readOnly
           style={inputStyle}
         />
 
@@ -122,7 +156,7 @@ const PedidoForm = () => {
           style={inputStyle}
         />
 
-        <p><strong>Saldo Pendiente:</strong> Bs {calcularSaldo()}</p>
+        <p><strong>Saldo Pendiente:</strong> Bs {calcularSaldo().toFixed(2)}</p>
 
         <label>Estado:</label>
         <select

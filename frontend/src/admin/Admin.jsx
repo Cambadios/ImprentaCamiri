@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Admin.css";
-import Admin from "../principal/principal";
 
 const images = [
   'https://i.pinimg.com/736x/17/a0/3a/17a03ace53bc30adaa41076ecef390db.jpg',
@@ -14,8 +13,8 @@ const images = [
 
 function Principal() {
   const [date, setDate] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Estado para controlar la barra lateral
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,17 +24,9 @@ function Principal() {
     const interval = setInterval(() => {
       setCurrentIndex(prevIndex => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
     }, 4000);
+
     return () => clearInterval(interval);
   }, []);
-
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
-  };
 
   const prevImage = () => {
     setCurrentIndex(prevIndex => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
@@ -45,17 +36,21 @@ function Principal() {
     setCurrentIndex(prevIndex => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen); // Alternar estado de la barra lateral
+  };
+
   return (
     <div className="principal-container">
-      {/* Fondos mosaico */}
-      <div className="bg-image-1 bg-image"></div>
-      <div className="bg-image-2 bg-image"></div>
-      <div className="bg-image-3 bg-image"></div>
-      <div className="bg-image-4 bg-image"></div>
-      <div className="bg-image-5 bg-image"></div>
-      <div className="bg-image-6 bg-image"></div>
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className={`bg-image-${i + 1} bg-image`} />
+      ))}
 
-      {/* Header */}
       <header className="principal-header">
         <h1>BIENVENIDO A LA ADMINISTRACION DE IMPRENTA CAMIRI</h1>
         <p>Aquí podrás administrar toda la imprenta en tus manos.</p>
@@ -63,25 +58,19 @@ function Principal() {
       </header>
 
       {/* Menú hamburguesa */}
-      <div
-        className={`hamburger-menu ${menuOpen ? "open" : ""}`}
-        onClick={toggleMenu}
-        aria-label="Toggle menu"
-        role="button"
-        tabIndex={0}
-        onKeyDown={e => e.key === "Enter" && toggleMenu()}
-      >
+      <div className={`hamburger-menu ${isSidebarOpen ? 'open' : ''}`} onClick={toggleSidebar}>
         <div className="line"></div>
         <div className="line"></div>
         <div className="line"></div>
       </div>
 
-      {/* Sidebar */}
-      <nav className={`sidebar ${menuOpen ? "open" : ""}`}>
+      {/* Barra lateral */}
+      <nav className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
         <button
           className="principal-button"
           onClick={() => navigate("/dashboard")}
           aria-label="Dashboard"
+          type="button"
         >
           <img
             src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
@@ -90,8 +79,8 @@ function Principal() {
           <span>DASHBOARD</span>
         </button>
 
-        <Link to="/clientes" className="no-link" onClick={() => setMenuOpen(false)}>
-          <button className="principal-button">
+        <Link to="/clientes" className="no-link">
+          <button className="principal-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/686/686348.png"
               alt="Cliente"
@@ -100,8 +89,8 @@ function Principal() {
           </button>
         </Link>
 
-        <Link to="/pedidos" className="no-link" onClick={() => setMenuOpen(false)}>
-          <button className="principal-button">
+        <Link to="/pedidos" className="no-link">
+          <button className="principal-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/6384/6384868.png"
               alt="Pedido"
@@ -110,8 +99,8 @@ function Principal() {
           </button>
         </Link>
 
-        <Link to="/inventario" className="no-link" onClick={() => setMenuOpen(false)}>
-          <button className="principal-button">
+        <Link to="/inventario" className="no-link">
+          <button className="principal-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png"
               alt="Inventario"
@@ -120,9 +109,19 @@ function Principal() {
           </button>
         </Link>
 
-        {/* Nuevo enlace Usuarios */}
-        <Link to="/usuarios" className="no-link" onClick={() => setMenuOpen(false)}>
-          <button className="principal-button">
+        <Link to="/productos" className="no-link">
+          <button className="principal-button" type="button">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2991/2991123.png"
+              alt="Productos"
+              style={{ width: "24px", height: "24px" }}
+            />
+            <span>PRODUCTOS</span>
+          </button>
+        </Link>
+
+        <Link to="/usuarios" className="no-link">
+          <button className="principal-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
               alt="Usuarios"
@@ -131,7 +130,11 @@ function Principal() {
           </button>
         </Link>
 
-        <button className="principal-button">
+        <button
+          className="principal-button"
+          type="button"
+          onClick={() => alert("Funcionalidad de reportes aún no implementada")}
+        >
           <img
             src="https://cdn-icons-png.flaticon.com/512/5674/5674015.png"
             alt="Reportes"
@@ -139,7 +142,7 @@ function Principal() {
           <span>REPORTES</span>
         </button>
 
-        <button className="logout-button" onClick={handleLogout}>
+        <button className="logout-button" onClick={handleLogout} type="button">
           Cerrar sesión
         </button>
       </nav>
@@ -150,6 +153,7 @@ function Principal() {
           className="principal-button"
           onClick={() => navigate("/dashboard")}
           aria-label="Dashboard"
+          type="button"
         >
           <img
             src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
@@ -159,7 +163,7 @@ function Principal() {
         </button>
 
         <Link to="/clientes" className="no-link">
-          <button className="principal-button">
+          <button className="principal-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/686/686348.png"
               alt="Cliente"
@@ -169,7 +173,7 @@ function Principal() {
         </Link>
 
         <Link to="/pedidos" className="no-link">
-          <button className="principal-button">
+          <button className="principal-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/6384/6384868.png"
               alt="Pedido"
@@ -179,7 +183,7 @@ function Principal() {
         </Link>
 
         <Link to="/inventario" className="no-link">
-          <button className="principal-button">
+          <button className="principal-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png"
               alt="Inventario"
@@ -188,9 +192,19 @@ function Principal() {
           </button>
         </Link>
 
-        {/* Botón Usuarios */}
+        <Link to="/productos" className="no-link">
+          <button className="principal-button" type="button">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2991/2991123.png"
+              alt="Productos"
+              style={{ width: "24px", height: "24px" }}
+            />
+            <span>PRODUCTOS</span>
+          </button>
+        </Link>
+
         <Link to="/usuarios" className="no-link">
-          <button className="principal-button">
+          <button className="principal-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
               alt="Usuarios"
@@ -199,7 +213,11 @@ function Principal() {
           </button>
         </Link>
 
-        <button className="principal-button">
+        <button
+          className="principal-button"
+          type="button"
+          onClick={() => alert("Funcionalidad de reportes aún no implementada")}
+        >
           <img
             src="https://cdn-icons-png.flaticon.com/512/5674/5674015.png"
             alt="Reportes"
@@ -214,6 +232,7 @@ function Principal() {
           className="carousel-btn prev-btn"
           onClick={prevImage}
           aria-label="Previous image"
+          type="button"
         >
           &#10094;
         </button>
@@ -228,6 +247,7 @@ function Principal() {
           className="carousel-btn next-btn"
           onClick={nextImage}
           aria-label="Next image"
+          type="button"
         >
           &#10095;
         </button>

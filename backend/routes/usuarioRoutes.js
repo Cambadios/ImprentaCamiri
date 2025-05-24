@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const Usuario = require('../models/usuario');
 
 // Obtener todos los usuarios
-router.get('/usuario', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const usuarios = await Usuario.find();
     res.json(usuarios);
@@ -15,7 +15,7 @@ router.get('/usuario', async (req, res) => {
 });
 
 // Obtener usuario por ID
-router.get('/usuario/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.params.id);
     if (!usuario) {
@@ -28,7 +28,7 @@ router.get('/usuario/:id', async (req, res) => {
 });
 
 // Crear usuario con validación y contraseña hasheada
-router.post('/usuario', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { nombreCompleto, correo, telefono, carnetIdentidad, contraseña, rol } = req.body;
 
@@ -63,7 +63,7 @@ router.post('/usuario', async (req, res) => {
       telefono,
       carnetIdentidad,
       contraseña: hashedPassword,
-      rol: (rol === 'admin' || rol === 'administrador') ? 'administrador' : 'usuario_normal', // Normaliza rol
+      rol: (rol === 'admin' || rol === 'administrador') ? 'administrador' : 'usuario_normal',
     });
 
     await nuevoUsuario.save();
@@ -75,7 +75,7 @@ router.post('/usuario', async (req, res) => {
 });
 
 // Actualizar usuario por ID
-router.put('/usuario/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { nombreCompleto, correo, telefono, carnetIdentidad, rol } = req.body;
 
@@ -119,7 +119,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Eliminar usuario
-router.delete('/usuario/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const eliminado = await Usuario.findByIdAndDelete(req.params.id);
     if (!eliminado) return res.status(404).json({ mensaje: 'Usuario no encontrado' });

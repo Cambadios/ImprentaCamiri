@@ -1,21 +1,26 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+// src/comunes/VolverPrincipal.jsx
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-const VolverPrincipal = () => (
-  <div style={{ marginBottom: '20px' }}>
-    <Link to="/admin" style={{ textDecoration: 'none' }}>
-      <button style={{
-        padding: '8px 16px',
-        backgroundColor: '#007bff',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer'
-      }}>
-        ← Volver a Admin
-      </button>
-    </Link>
-  </div>
-);
+function VolverPrincipal() {
+  const navigate = useNavigate();
+
+  return (
+    <button
+      onClick={() => navigate(-1)}  // Esto regresa a la página anterior
+      style={{
+        padding: "10px 20px",
+        borderRadius: "5px",
+        border: "none",
+        backgroundColor: "#007bff",
+        color: "white",
+        cursor: "pointer",
+        marginBottom: "20px"
+      }}
+    >
+      ← Volver
+    </button>
+  );
+}
 
 export default VolverPrincipal;

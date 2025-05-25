@@ -1,4 +1,3 @@
-// /src/login/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import './Login.css';  // Asegúrate de que este archivo exista para estilos
@@ -30,10 +29,16 @@ function Login() {
       setMensaje(data.mensaje);
 
       if (data.mensaje.includes("exitoso")) {
+        // Guardar el rol del usuario en localStorage
+        localStorage.setItem("role", data.rol);
+
+        // Redirigir según el rol del usuario
         if (data.rol === "administrador") {
           navigate("/admin");
-        } else {
+        } else if (data.rol === "usuario_normal") {
           navigate("/principal");
+        } else {
+          setMensaje("Rol desconocido");
         }
       }
     } catch (error) {

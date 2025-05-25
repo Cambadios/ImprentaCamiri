@@ -2,7 +2,7 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 
 import Login from "./login/Login";
-import Principal from "./principal/Principal";
+import Principal from "./principal/principal";
 import Admin from "./admin/Admin";
 
 // Importar el nuevo Dashboard que muestra ambos dashboards juntos

@@ -1,3 +1,4 @@
+// routes/pedidoroutes.js
 const express = require('express');
 const Pedido = require('../models/pedido');
 const router = express.Router();
@@ -48,10 +49,10 @@ router.get('/productos', async (req, res) => {
   }
 });
 
-// Obtener todos los pedidos
+// Obtener todos los pedidos con los detalles de los productos
 router.get('/', async (req, res) => {
   try {
-    const pedidos = await Pedido.find().select('-__v');
+    const pedidos = await Pedido.find().populate('producto'); // Populate para obtener detalles del producto
     res.status(200).json(pedidos);
   } catch (err) {
     console.error("Error al obtener los pedidos:", err);
@@ -62,7 +63,7 @@ router.get('/', async (req, res) => {
 // Obtener un pedido específico por ID
 router.get('/:id', async (req, res) => {
   try {
-    const pedido = await Pedido.findById(req.params.id).select('-__v');
+    const pedido = await Pedido.findById(req.params.id).populate('producto'); // Populate para obtener detalles del producto
     if (!pedido) {
       return res.status(404).send('Pedido no encontrado');
     }

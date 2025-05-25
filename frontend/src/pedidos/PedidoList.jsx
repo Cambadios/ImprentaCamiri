@@ -1,3 +1,4 @@
+// src/pedidos/PedidoList.jsx
 import React, { useState, useEffect } from 'react';
 import { getPedidos, deletePedido } from './PedidoService';
 import VolverPrincipal from '../comunes/VolverPrincipal';
@@ -110,7 +111,7 @@ function PedidoList() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center' }}>
           {pedidos.map(p => (
             <div key={p._id} style={cardStyle}>
-              <h3>{p.producto}</h3>
+              <h3>{p.producto ? p.producto.nombre : 'Producto no disponible'}</h3> {/* Mostrar nombre del producto */}
               <p><strong>Cliente:</strong> {p.cliente}</p>
               <p><strong>Cantidad:</strong> {p.cantidad}</p>
               <p><strong>Precio Total:</strong> Bs {p.precioTotal}</p>

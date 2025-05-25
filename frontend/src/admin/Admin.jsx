@@ -11,10 +11,10 @@ const images = [
   'https://i.pinimg.com/736x/5f/20/8e/5f208e18db4f240785d1d4ce88b99a2c.jpg',
 ];
 
-function Principal() {
+function Admin() {
   const [date, setDate] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Estado para controlar la barra lateral
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,36 +38,42 @@ function Principal() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
     navigate("/");
   };
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen); // Alternar estado de la barra lateral
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   return (
-    <div className="principal-container">
+    <div className={`admin-container ${isSidebarOpen ? "sidebar-open" : ""}`}>
       {[...Array(6)].map((_, i) => (
         <div key={i} className={`bg-image-${i + 1} bg-image`} />
       ))}
 
-      <header className="principal-header">
-        <h1>BIENVENIDO A LA ADMINISTRACION DE IMPRENTA CAMIRI</h1>
+      {/* Header */}
+      <header className="admin-header">
+        <h1>BIENVENIDO A LA ADMINISTRACIÓN DE IMPRENTA CAMIRI</h1>
         <p>Aquí podrás administrar toda la imprenta en tus manos.</p>
         <span className="date">{date}</span>
       </header>
 
-      {/* Menú hamburguesa */}
-      <div className={`hamburger-menu ${isSidebarOpen ? 'open' : ''}`} onClick={toggleSidebar}>
-        <div className="line"></div>
-        <div className="line"></div>
-        <div className="line"></div>
-      </div>
+      {/* Hamburger Menu */}
+      <button
+        className={`hamburger-menu ${isSidebarOpen ? "open" : ""}`}
+        onClick={toggleSidebar}
+        aria-label="Toggle menu"
+      >
+        <span className="line"></span>
+        <span className="line"></span>
+        <span className="line"></span>
+      </button>
 
-      {/* Barra lateral */}
-      <nav className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+      {/* Sidebar */}
+      <nav className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
         <button
-          className="principal-button"
+          className="admin-button"
           onClick={() => navigate("/dashboard")}
           aria-label="Dashboard"
           type="button"
@@ -80,7 +86,7 @@ function Principal() {
         </button>
 
         <Link to="/clientes" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/686/686348.png"
               alt="Cliente"
@@ -90,7 +96,7 @@ function Principal() {
         </Link>
 
         <Link to="/pedidos" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/6384/6384868.png"
               alt="Pedido"
@@ -100,7 +106,7 @@ function Principal() {
         </Link>
 
         <Link to="/inventario" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png"
               alt="Inventario"
@@ -110,7 +116,7 @@ function Principal() {
         </Link>
 
         <Link to="/productos" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/2991/2991123.png"
               alt="Productos"
@@ -121,7 +127,7 @@ function Principal() {
         </Link>
 
         <Link to="/usuarios" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
               alt="Usuarios"
@@ -131,7 +137,7 @@ function Principal() {
         </Link>
 
         <button
-          className="principal-button"
+          className="admin-button"
           type="button"
           onClick={() => alert("Funcionalidad de reportes aún no implementada")}
         >
@@ -147,10 +153,10 @@ function Principal() {
         </button>
       </nav>
 
-      {/* Botones centrales */}
-      <div className="principal-buttons">
+      {/* Central buttons */}
+      <div className="admin-buttons">
         <button
-          className="principal-button"
+          className="admin-button"
           onClick={() => navigate("/dashboard")}
           aria-label="Dashboard"
           type="button"
@@ -163,7 +169,7 @@ function Principal() {
         </button>
 
         <Link to="/clientes" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/686/686348.png"
               alt="Cliente"
@@ -173,7 +179,7 @@ function Principal() {
         </Link>
 
         <Link to="/pedidos" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/6384/6384868.png"
               alt="Pedido"
@@ -183,7 +189,7 @@ function Principal() {
         </Link>
 
         <Link to="/inventario" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png"
               alt="Inventario"
@@ -193,7 +199,7 @@ function Principal() {
         </Link>
 
         <Link to="/productos" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/2991/2991123.png"
               alt="Productos"
@@ -204,7 +210,7 @@ function Principal() {
         </Link>
 
         <Link to="/usuarios" className="no-link">
-          <button className="principal-button" type="button">
+          <button className="admin-button" type="button">
             <img
               src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
               alt="Usuarios"
@@ -214,7 +220,7 @@ function Principal() {
         </Link>
 
         <button
-          className="principal-button"
+          className="admin-button"
           type="button"
           onClick={() => alert("Funcionalidad de reportes aún no implementada")}
         >
@@ -226,7 +232,7 @@ function Principal() {
         </button>
       </div>
 
-      {/* Carrusel de imágenes */}
+      {/* Carousel */}
       <div className="carousel-container">
         <button
           className="carousel-btn prev-btn"
@@ -256,4 +262,4 @@ function Principal() {
   );
 }
 
-export default Principal;
+export default Admin;

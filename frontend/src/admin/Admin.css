@@ -1,252 +1,195 @@
-/* Contenedor principal */
-.principal-container {
-  position: relative;
-  min-height: 100vh;
-  padding: 20px;
-  margin-top: 0;
-  background-color: beige;
-  overflow: hidden;
+:root {
+  --admin-bg: #f5f1e9;
+  --admin-text: #5a5336;
+  --admin-accent: #cbb88a;
+  --admin-button-bg: #e0d8ba;
+  --admin-button-hover: #cbb88a;
+  --admin-button-text: #3e3a2f;
+  --admin-sidebar-bg: #d6c79c;
+  --admin-sidebar-text: #3e3a2f;
+  --admin-logout-bg: #a85c39;
+  --admin-logout-hover: #6e3f22;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body, html, #root {
+  margin: 0;
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.admin-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  transition: margin-left 0.3s ease; /* Transición suave cuando cambia el margen */
-}
-
-/* Cuando la barra lateral está abierta, desplazamos el contenido hacia la derecha */
-.sidebar.open ~ .principal-container {
-  margin-left: 200px; /* Desplazamos el contenido 200px hacia la derecha */
-}
-
-/* Cuando la barra lateral está cerrada, el contenido vuelve a su posición original */
-.sidebar.closed ~ .principal-container {
-  margin-left: 0;
-}
-
-/* Fondo de las imágenes */
-.bg-image-1,
-.bg-image-2,
-.bg-image-3,
-.bg-image-4,
-.bg-image-5,
-.bg-image-6 {
-  position: fixed;
-  top: 0; 
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-repeat: repeat;
-  background-position: center center;
-  background-size: 200px 200px;
-  opacity: 0.15;
-  pointer-events: none;
-  filter: brightness(0.85) grayscale(15%);
-  transition: opacity 0.5s ease;
-  mix-blend-mode: screen;
-  z-index: 0;
-}
-
-.bg-image-1 { background-image: url('https://i.pinimg.com/736x/17/a0/3a/17a03ace53bc30adaa41076ecef390db.jpg'); }
-.bg-image-2 { background-image: url('https://i.pinimg.com/736x/58/53/0d/58530d89ee39c6edadc2050e999c7c55.jpg'); }
-.bg-image-3 { background-image: url('https://i.pinimg.com/736x/ec/2d/65/ec2d65b1b5b6db77cfccd103a2fc2401.jpg'); }
-.bg-image-4 { background-image: url('https://i.pinimg.com/736x/be/ce/66/bece66c645007d8ac38175255ed9af39.jpg'); }
-.bg-image-5 { background-image: url('https://i.pinimg.com/736x/65/af/c7/65afc7acdfe22a457e97e5c757360193.jpg'); }
-.bg-image-6 { background-image: url('https://i.pinimg.com/736x/5f/20/8e/5f208e18db4f240785d1d4ce88b99a2c.jpg'); }
-
-/* Estilos del encabezado */
-.principal-header {
+  min-height: 100vh;
   position: relative;
-  z-index: 40;
-  width: 100%;
-  background-color: #cbb88a;
+  overflow: hidden;
+}
+
+.admin-header {
+  background-color: var(--admin-accent);
   padding: 30px 20px;
   text-align: center;
   border-radius: 0 0 12px 12px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  color: var(--admin-text);
+  position: relative;
+  z-index: 10;
 }
 
-.principal-header h1 {
-  font-size: 3rem;
+.admin-header h1 {
+  font-size: 2.8rem;
   margin: 0;
-  color: #3e3a2f;
   font-weight: 700;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.principal-header p {
+.admin-header p {
   font-size: 1.25rem;
   margin: 10px 0 0 0;
-  color: #5a5336;
   font-weight: 500;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.principal-header .date {
+.admin-header .date {
   display: block;
   margin-top: 8px;
-  font-size: 1rem;
-  color: #766f4f;
   font-weight: 400;
+  font-size: 1rem;
 }
 
-/* Botones principales */
-.principal-buttons {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 30px;
-  flex-wrap: wrap;
-  width: 100%;
-  margin-top: 120px;
-}
-
-/* Barra lateral */
 .sidebar {
   position: fixed;
   top: 0;
   left: -200px;
   width: 200px;
-  height: 100%;
-  background-color: #d6c79c; /* Beige */
-  color: #3e3a2f; /* Color de texto */
+  height: 100vh;
+  background-color: var(--admin-sidebar-bg);
+  color: var(--admin-sidebar-text);
   padding: 20px 10px;
   transition: left 0.3s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 50;
   box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+  z-index: 1000;
 }
 
-/* Barra lateral abierta */
 .sidebar.open {
-  left: 0; /* Mueve la barra lateral a la vista */
+  left: 0;
 }
 
-/* Barra lateral cerrada */
 .sidebar.closed {
-  left: -200px; /* Mueve la barra lateral fuera de la vista */
+  left: -200px;
 }
 
-/* Título en la barra lateral */
-.sidebar::before {
-  content: "IMPRENTA CAMIRI";
-  display: block;
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #3e3a2f;
-  margin-bottom: 25px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  user-select: none;
-  text-align: center;
-  width: 100%;
-}
-
-/* Estilos de los botones de la barra lateral */
-.principal-button {
-  background-color: #fff;
-  border: 1px solid #bfb49d;
+.admin-button {
+  background-color: var(--admin-button-bg);
+  border: none;
   border-radius: 8px;
-  padding: 8px;
+  padding: 10px;
   width: 140px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 700;
+  margin-bottom: 12px;
   cursor: pointer;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  font-weight: 700;
+  color: var(--admin-button-text);
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
-  margin-bottom: 12px;
-  color: #3e3a2f;
+  box-shadow: 0 3px 7px rgba(0,0,0,0.1);
+  transition: background-color 0.3s ease;
 }
 
-.principal-button:hover {
-  background-color: #e6f0ff;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
-  transform: translateY(-2px);
-  transition: all 0.3s ease;
+.admin-button:hover {
+  background-color: var(--admin-button-hover);
 }
 
-.principal-button img {
+.admin-button img {
   width: 35px;
   height: 35px;
-  object-fit: cover;
   margin-bottom: 5px;
 }
 
-.principal-button span {
-  margin-top: 5px;
+.admin-button span {
   font-size: 13px;
-  font-weight: 700;
-  color: #3e3a2f;
 }
 
-/* Cerrar sesión */
+/* Botones centrales: fila horizontal y centrados */
+.admin-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 120px;
+}
+
 .logout-button {
-  margin-top: 20px;
-  background-color: #a85c39;
+  background-color: var(--admin-logout-bg);
   color: white;
   padding: 10px 20px;
-  font-size: 14px;
   font-weight: 700;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   transition: background-color 0.3s ease;
   width: 140px;
+  margin-top: auto;
 }
 
 .logout-button:hover {
-  background-color: #6e3f22;
+  background-color: var(--admin-logout-hover);
 }
 
-/* Para los enlaces que no se deben decorar */
-.no-link {
-  text-decoration: none;
-  color: inherit;
-}
-
-/* Menú hamburguesa */
 .hamburger-menu {
   position: absolute;
   top: 20px;
   left: 20px;
+  width: 28px;
+  height: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   cursor: pointer;
-  z-index: 60;
+  z-index: 1100;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
+.hamburger-menu span,
 .hamburger-menu .line {
-  width: 30px;
-  height: 5px;
-  margin: 6px 0;
-  background-color: #333;
-  transition: 0.4s;
+  display: block;
+  height: 4px;
+  background: var(--admin-sidebar-text);
+  border-radius: 2px;
+  transition: all 0.3s ease;
 }
 
+.hamburger-menu.open span:nth-child(1),
 .hamburger-menu.open .line:nth-child(1) {
-  transform: rotate(-45deg) translate(-5px, 6px);
+  transform: translateY(10px) rotate(45deg);
 }
 
+.hamburger-menu.open span:nth-child(2),
 .hamburger-menu.open .line:nth-child(2) {
   opacity: 0;
 }
 
+.hamburger-menu.open span:nth-child(3),
 .hamburger-menu.open .line:nth-child(3) {
-  transform: rotate(45deg) translate(-5px, -6px);
+  transform: translateY(-10px) rotate(-45deg);
 }
 
-/* Carrusel */
 .carousel-container {
   position: relative;
   margin-top: 40px;
   width: 80%;
   max-width: 700px;
   height: 300px;
-  background-color: beige;
+  background-color: var(--admin-bg);
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   display: flex;
@@ -268,11 +211,11 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(203,184,138,0.7);
   border: none;
   font-size: 2rem;
   font-weight: bold;
-  color: #333;
+  color: #3e3a2f;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -285,7 +228,7 @@
 }
 
 .carousel-btn:hover {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(203,184,138,0.95);
 }
 
 .prev-btn {
@@ -296,15 +239,14 @@
   right: 15px;
 }
 
-/* Responsive */
 @media (max-width: 600px) {
-  .principal-buttons {
+  .admin-buttons {
     flex-direction: column;
     gap: 15px;
     margin-top: 80px;
   }
 
-  .principal-button {
+  .admin-button {
     width: 100%;
     max-width: 300px;
   }
@@ -313,25 +255,12 @@
     width: 150px;
   }
 
-  .principal-button {
+  .admin-button {
     width: 130px;
   }
 }
-/* Estilo para el botón de abrir/cerrar la barra lateral */
-.sidebar-toggle-button {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  padding: 10px 15px;
-  background-color: #a85c39; /* color café oscuro */
-  color: white;
-  font-size: 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
 
-.sidebar-toggle-button:hover {
-  background-color: #6e3f22;
+.no-link {
+  text-decoration: none;
+  color: inherit;
 }

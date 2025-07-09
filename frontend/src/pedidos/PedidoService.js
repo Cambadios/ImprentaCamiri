@@ -1,6 +1,6 @@
 // src/pedidos/PedidoService.js
-
-const API_URL = 'http://localhost:3000/api/pedidos';  // Cambia la URL si es necesario
+import { urlApi } from "../api/api";
+const API_URL = urlApi + '/api/pedidos';  // Cambia la URL si es necesario
 
 // Función para obtener todos los pedidos
 export const getPedidos = async () => {

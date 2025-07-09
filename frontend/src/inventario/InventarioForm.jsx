@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { urlApi } from '../api/api';
 
 const InventarioForm = () => {
   const [nombre, setNombre] = useState('');
@@ -24,7 +25,7 @@ const InventarioForm = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:3000/api/inventario', {
+      const response = await fetch(urlApi + '/api/inventario', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(producto),

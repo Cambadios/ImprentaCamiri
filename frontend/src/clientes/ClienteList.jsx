@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { urlApi } from '../api/api';
 
 const ClienteList = () => {
   const [clientes, setClientes] = useState([]);
@@ -10,7 +11,7 @@ const ClienteList = () => {
   useEffect(() => {
     const fetchClientes = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/clientes');
+        const response = await fetch(urlApi + '/api/clientes');
         const data = await response.json();
         setClientes(data);
       } catch (error) {
@@ -25,7 +26,7 @@ const ClienteList = () => {
     if (!window.confirm('¿Deseas eliminar este cliente?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/clientes/${id}`, {
+      const response = await fetch(urlApi + `/api/clientes/${id}`, {
         method: 'DELETE',
       });
 
@@ -52,14 +53,14 @@ const ClienteList = () => {
 
   const guardarCambios = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/clientes/${clienteEditando._id}`, {
+      const response = await fetch(urlApi + `:3000/api/clientes/${clienteEditando._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(clienteEditando),
       });
 
       if (response.ok) {
-        const actualizados = await fetch('http://localhost:3000/api/clientes');
+        const actualizados = await fetch(urlApi + '/api/clientes');
         const data = await actualizados.json();
         setClientes(data);
         cerrarModal();

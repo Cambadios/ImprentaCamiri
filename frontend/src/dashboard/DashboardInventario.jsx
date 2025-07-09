@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DashboardChartTable from "./DashboardChartTable";
+import { urlApi } from "../api/api";
 
 function DashboardInventario() {
   const [inventario, setInventario] = useState([]);
@@ -7,7 +8,7 @@ function DashboardInventario() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/inventario")
+    fetch(urlApi + "/api/inventario")
       .then((res) => {
         if (!res.ok) throw new Error("Error al cargar inventario");
         return res.json();

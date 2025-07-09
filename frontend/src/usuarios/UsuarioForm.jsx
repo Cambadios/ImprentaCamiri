@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { createUsuario, updateUsuario, getUsuarios } from './UsuarioService';
+import { urlApi } from '../api/api';
 
 const UsuarioForm = () => {
   const [nombreCompleto, setNombreCompleto] = useState('');
@@ -23,7 +24,7 @@ const UsuarioForm = () => {
 
   const fetchUsuario = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/usuario/${id}`);
+      const response = await fetch(urlApi + `/api/usuario/${id}`);
       if (response.ok) {
         const data = await response.json();
         setNombreCompleto(data.nombreCompleto);

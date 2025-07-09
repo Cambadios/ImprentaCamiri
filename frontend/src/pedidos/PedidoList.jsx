@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { getPedidos, deletePedido } from './PedidoService';
 import VolverPrincipal from '../comunes/VolverPrincipal';
 import { Link } from 'react-router-dom';
+import { urlApi } from '../api/api';
 
 function PedidoList() {
   const [pedidos, setPedidos] = useState([]);
@@ -53,7 +54,7 @@ function PedidoList() {
 
   const guardarCambios = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoEditando._id}`, {
+      const response = await fetch(urlApi + `/api/pedidos/${pedidoEditando._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pedidoEditando)

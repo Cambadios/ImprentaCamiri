@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:3000/api/usuarios';
+import { urlApi } from "../api/api";
+
+const API_URL = urlApi + '/api/usuarios';
 
 // Obtener todos los usuarios
 export const getUsuarios = async () => {

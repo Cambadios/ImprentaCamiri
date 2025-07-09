@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import './Login.css';  // Asegúrate de que este archivo exista para estilos
+import { urlApi } from "../api/api";
 
 function Login() {
   const [correo, setCorreo] = useState("");
@@ -13,7 +14,7 @@ function Login() {
     setMensaje('Intentando conectar...');
 
     try {
-      const res = await fetch("http://localhost:3000/api/usuarios/login", {
+      const res = await fetch(urlApi + "/api/usuarios/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo, contraseña }),

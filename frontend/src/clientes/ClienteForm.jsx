@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './cliente.css';
+import { urlApi } from '../api/api';
 
 const ClienteForm = () => {
   const [nombre, setNombre] = useState('');
@@ -21,7 +22,7 @@ const ClienteForm = () => {
     const cliente = { nombre, apellido, telefono, correo };
 
     try {
-      const response = await fetch('http://localhost:3000/api/clientes', {
+      const response = await fetch(urlApi + '/api/clientes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cliente),

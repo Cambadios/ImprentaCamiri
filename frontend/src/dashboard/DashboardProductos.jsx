@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DashboardChartTable from "./DashboardChartTable";
+import { urlApi } from "../api/api";
 
 function DashboardProductos() {
   const [productos, setProductos] = useState([]);
@@ -7,7 +8,7 @@ function DashboardProductos() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/inventario") // Aquí pones la API correcta que quieras usar
+    fetch(urlApi + "/api/inventario") // Aquí pones la API correcta que quieras usar
       .then((res) => {
         if (!res.ok) throw new Error("Error al cargar productos");
         return res.json();

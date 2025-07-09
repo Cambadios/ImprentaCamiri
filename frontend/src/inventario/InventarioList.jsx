@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import VolverPrincipal from '../comunes/VolverPrincipal';
+import { urlApi } from '../api/api';
 
 const InventarioList = () => {
   const [productos, setProductos] = useState([]);
@@ -9,7 +10,7 @@ const InventarioList = () => {
 
   const fetchProductos = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/inventario');
+      const response = await fetch(urlApi + '/api/inventario');
       const data = await response.json();
       setProductos(data);
     } catch (error) {
@@ -21,7 +22,7 @@ const InventarioList = () => {
     if (!window.confirm('¿Seguro que deseas eliminar este producto?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/inventario/${id}`, {
+      const response = await fetch(urlApi + `/inventario/${id}`, {
         method: 'DELETE',
       });
 
@@ -48,7 +49,7 @@ const InventarioList = () => {
 
   const guardarCambios = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/inventario/${productoEditando._id}`, {
+      const response = await fetch(urlApi + `/api/inventario/${productoEditando._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productoEditando),

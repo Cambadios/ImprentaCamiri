@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { urlApi } from '../api/api';
 
 const ProductoForm = ({ productoActual, onGuardado, onCancelar }) => {
   const [nombre, setNombre] = useState('');
@@ -18,7 +19,7 @@ const ProductoForm = ({ productoActual, onGuardado, onCancelar }) => {
     }
     const cargarInventario = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/inventario');
+        const res = await fetch(urlApi + '/api/inventario');
         if (!res.ok) throw new Error('Error al cargar inventario');
         const data = await res.json();
         setInventario(data);
@@ -43,8 +44,8 @@ const ProductoForm = ({ productoActual, onGuardado, onCancelar }) => {
 
     try {
       const url = productoActual
-        ? `http://localhost:3000/api/productos/${productoActual._id}`
-        : 'http://localhost:3000/api/productos';
+        ? urlApi + `/api/productos/${productoActual._id}`
+        : urlApi + '/api/productos';
 
       const method = productoActual ? 'PUT' : 'POST';
 

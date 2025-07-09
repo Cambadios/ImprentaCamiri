@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:3000/api/clientes';  // Cambia la URL si es necesario
+import { urlApi } from "../api/api";
+
+const API_URL = urlApi + '/api/clientes';  // Cambia la URL si es necesario
 
 // Función para obtener todos los clientes
 export const getClientes = async () => {

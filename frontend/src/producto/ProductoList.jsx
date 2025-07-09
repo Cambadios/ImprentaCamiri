@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ProductoForm from './ProductoForm';
 import { useNavigate } from 'react-router-dom';
+import { urlApi } from '../api/api';
 
 const ProductoList = () => {
   const [productos, setProductos] = useState([]);
@@ -10,7 +11,7 @@ const ProductoList = () => {
 
   const cargarProductos = async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/productos');
+      const res = await fetch(urlApi + '/api/productos');
       if (!res.ok) throw new Error('Error al obtener productos');
       const data = await res.json();
       setProductos(data);
@@ -26,7 +27,7 @@ const ProductoList = () => {
   const handleEliminar = async (id) => {
     if (!window.confirm('¿Seguro que deseas eliminar este producto?')) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/productos/${id}`, { method: 'DELETE' });
+      const res = await fetch(urlApi + `/api/productos/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Error al eliminar producto');
       setProductos(productos.filter(p => p._id !== id));
     } catch (error) {

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPedido } from './PedidoService';
+import { urlApi } from '../api/api';
 
 const getClientes = async () => {
   try {
-    const response = await fetch('http://localhost:3000/api/clientes');
+    const response = await fetch(urlApi + 'api/clientes');
     return await response.json();
   } catch (error) {
     console.error('Error al obtener clientes', error);
@@ -14,7 +15,7 @@ const getClientes = async () => {
 
 const getProductos = async () => {
   try {
-    const response = await fetch('http://localhost:3000/api/productos');
+    const response = await fetch (urlApi + '/api/productos');
     return await response.json();
   } catch (error) {
     console.error('Error al obtener productos', error);

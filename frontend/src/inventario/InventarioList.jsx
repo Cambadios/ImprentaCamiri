@@ -86,50 +86,59 @@ const InventarioList = () => {
       {productos.length === 0 ? (
         <p style={{ textAlign: 'center' }}>No hay productos disponibles.</p>
       ) : (
-        <div style={listContainerStyle}>
-          {productos.map((producto) => (
-            <div key={producto._id} style={cardStyle}>
-              {producto.imagenUrl ? (
-                <img
-                  src={producto.imagenUrl}
-                  alt={producto.nombre}
-                  style={imagenEstilo}
-                />
-              ) : (
-                <div style={imagenPlaceholderStyle}>
-                  Sin imagen
-                </div>
-              )}
-              <h3>{producto.nombre}</h3>
-              <p><strong>Cantidad:</strong> {producto.cantidad}</p>
-              {producto.esPorDocena && (
-                <p><strong>Docenas:</strong> {producto.numDocenas}</p>
-              )}
-              <p><strong>Descripción:</strong> {producto.descripcion}</p>
-
-              <button
-                onClick={() => eliminarProducto(producto._id)}
-                style={{ ...buttonStyle, backgroundColor: '#dc3545' }}
-              >
-                Eliminar
-              </button>
-
-              <button
-                onClick={() => abrirModal(producto)}
-                style={{ ...buttonStyle, backgroundColor: '#ffc107', marginTop: '10px' }}
-              >
-                Editar
-              </button>
-            </div>
-          ))}
-        </div>
+        <table style={tableStyle}>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Cantidad</th>
+              <th>Docenas</th>
+              <th>Descripción</th>
+              <th>Fecha de Ingreso</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {productos.map((producto) => (
+              <tr key={producto._id}>
+                <td>{producto.codigo}</td>
+                <td>{producto.nombre}</td>
+                <td>{producto.cantidad}</td>
+                <td>{producto.esPorDocena ? producto.numDocenas : '-'}</td>
+                <td>{producto.descripcion}</td>
+                <td>{new Date(producto.fechaIngreso).toLocaleDateString()}</td>
+                <td>
+                  <button
+                    onClick={() => eliminarProducto(producto._id)}
+                    style={{ ...buttonStyle, backgroundColor: '#dc3545', marginRight: '5px' }}
+                  >
+                    Eliminar
+                  </button>
+                  <button
+                    onClick={() => abrirModal(producto)}
+                    style={{ ...buttonStyle, backgroundColor: '#ffc107' }}
+                  >
+                    Editar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
 
-      {/* MODAL */}
       {mostrarModal && productoEditando && (
         <div style={modalOverlayStyle}>
           <div style={modalStyle}>
             <h3>Editar Producto</h3>
+
+            <label>Código (no editable):</label>
+            <input
+              type="text"
+              value={productoEditando.codigo || ''}
+              disabled
+              style={{ ...inputStyle, backgroundColor: '#eee' }}
+            />
 
             <label>Nombre:</label>
             <input
@@ -158,8 +167,7 @@ const InventarioList = () => {
                     numDocenas: e.target.checked ? productoEditando.numDocenas : 0,
                   })
                 }
-              />
-              {' '}¿Es por docena?
+              /> ¿Es por docena?
             </label>
 
             {productoEditando.esPorDocena && (
@@ -182,11 +190,11 @@ const InventarioList = () => {
               style={{ ...inputStyle, height: '60px' }}
             />
 
-            <label>URL Imagen:</label>
+            <label>Fecha de Ingreso:</label>
             <input
-              type="text"
-              value={productoEditando.imagenUrl}
-              onChange={(e) => setProductoEditando({ ...productoEditando, imagenUrl: e.target.value })}
+              type="date"
+              value={productoEditando.fechaIngreso?.split('T')[0] || ''}
+              onChange={(e) => setProductoEditando({ ...productoEditando, fechaIngreso: e.target.value })}
               style={inputStyle}
             />
 
@@ -207,45 +215,18 @@ const InventarioList = () => {
 
 // Estilos
 const buttonStyle = {
-  padding: '10px 15px',
-  borderRadius: '5px',
+  padding: '6px 10px',
+  borderRadius: '4px',
   border: 'none',
   color: '#fff',
-  backgroundColor: '#007bff',
-  cursor: 'pointer'
+  cursor: 'pointer',
+  fontSize: '14px'
 };
 
-const listContainerStyle = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '20px',
-  justifyContent: 'center'
-};
-
-const cardStyle = {
-  width: '250px',
-  padding: '15px',
-  backgroundColor: '#f9f9f9',
-  borderRadius: '10px',
-  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
-  textAlign: 'left'
-};
-
-const imagenEstilo = {
+const tableStyle = {
   width: '100%',
-  height: '150px',
-  objectFit: 'cover',
-  borderRadius: '8px',
-  marginBottom: '10px',
-  backgroundColor: '#e0e0e0'
-};
-
-const imagenPlaceholderStyle = {
-  ...imagenEstilo,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: '#666'
+  borderCollapse: 'collapse',
+  marginTop: '20px'
 };
 
 const inputStyle = {

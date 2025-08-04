@@ -72,66 +72,42 @@ function Admin() {
 
       {/* Sidebar */}
       <nav className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
-        <button
-          className="admin-button"
-          onClick={() => navigate("/dashboard")}
-          aria-label="Dashboard"
-          type="button"
-        >
-          <img
-            src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
-            alt="Dashboard"
-          />
+        <button className="admin-button" onClick={() => navigate("/dashboard")} type="button">
+          <img src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png" alt="Dashboard" />
           <span>DASHBOARD</span>
         </button>
 
         <Link to="/clientes" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/686/686348.png"
-              alt="Cliente"
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/686/686348.png" alt="Cliente" />
             <span>CLIENTE</span>
           </button>
         </Link>
 
         <Link to="/pedidos" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/6384/6384868.png"
-              alt="Pedido"
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/6384/6384868.png" alt="Pedido" />
             <span>PEDIDO</span>
           </button>
         </Link>
 
         <Link to="/inventario" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png"
-              alt="Inventario"
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png" alt="Inventario" />
             <span>INVENTARIO</span>
           </button>
         </Link>
 
         <Link to="/productos" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/2991/2991123.png"
-              alt="Productos"
-              style={{ width: "24px", height: "24px" }}
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/2991/2991123.png" alt="Productos" style={{ width: "24px", height: "24px" }} />
             <span>PRODUCTOS</span>
           </button>
         </Link>
 
         <Link to="/usuarios" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
-              alt="Usuarios"
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="Usuarios" />
             <span>USUARIOS</span>
           </button>
         </Link>
@@ -139,7 +115,7 @@ function Admin() {
         <button
           className="admin-button"
           type="button"
-          onClick={() => alert("Funcionalidad de reportes aún no implementada")}
+          onClick={() => navigate("/reportes")}
         >
           <img
             src="https://cdn-icons-png.flaticon.com/512/5674/5674015.png"
@@ -155,66 +131,42 @@ function Admin() {
 
       {/* Central buttons */}
       <div className="admin-buttons">
-        <button
-          className="admin-button"
-          onClick={() => navigate("/dashboard")}
-          aria-label="Dashboard"
-          type="button"
-        >
-          <img
-            src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png"
-            alt="Dashboard"
-          />
+        <button className="admin-button" onClick={() => navigate("/dashboard")} type="button">
+          <img src="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png" alt="Dashboard" />
           <span>DASHBOARD</span>
         </button>
 
         <Link to="/clientes" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/686/686348.png"
-              alt="Cliente"
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/686/686348.png" alt="Cliente" />
             <span>CLIENTE</span>
           </button>
         </Link>
 
         <Link to="/pedidos" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/6384/6384868.png"
-              alt="Pedido"
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/6384/6384868.png" alt="Pedido" />
             <span>PEDIDO</span>
           </button>
         </Link>
 
         <Link to="/inventario" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png"
-              alt="Inventario"
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png" alt="Inventario" />
             <span>INVENTARIO</span>
           </button>
         </Link>
 
         <Link to="/productos" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/2991/2991123.png"
-              alt="Productos"
-              style={{ width: "24px", height: "24px" }}
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/2991/2991123.png" alt="Productos" style={{ width: "24px", height: "24px" }} />
             <span>PRODUCTOS</span>
           </button>
         </Link>
 
         <Link to="/usuarios" className="no-link">
           <button className="admin-button" type="button">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
-              alt="Usuarios"
-            />
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="Usuarios" />
             <span>USUARIOS</span>
           </button>
         </Link>
@@ -222,7 +174,7 @@ function Admin() {
         <button
           className="admin-button"
           type="button"
-          onClick={() => alert("Funcionalidad de reportes aún no implementada")}
+          onClick={() => navigate("/reportes")}
         >
           <img
             src="https://cdn-icons-png.flaticon.com/512/5674/5674015.png"
@@ -234,12 +186,7 @@ function Admin() {
 
       {/* Carousel */}
       <div className="carousel-container">
-        <button
-          className="carousel-btn prev-btn"
-          onClick={prevImage}
-          aria-label="Previous image"
-          type="button"
-        >
+        <button className="carousel-btn prev-btn" onClick={prevImage} aria-label="Previous image" type="button">
           &#10094;
         </button>
 
@@ -249,12 +196,7 @@ function Admin() {
           className="carousel-image"
         />
 
-        <button
-          className="carousel-btn next-btn"
-          onClick={nextImage}
-          aria-label="Next image"
-          type="button"
-        >
+        <button className="carousel-btn next-btn" onClick={nextImage} aria-label="Next image" type="button">
           &#10095;
         </button>
       </div>

@@ -17,14 +17,14 @@ export const getUsuarios = async () => {
   }
 };
 
-// Crear un nuevo usuario (con nombreCompleto)
+// Crear un nuevo usuario
 export const createUsuario = async (usuarioData) => {
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        nombreCompleto: usuarioData.nombre,  // 👈 Backend espera "nombreCompleto"
+        nombreCompleto: usuarioData.nombreCompleto,
         correo: usuarioData.correo,
         contrasena: usuarioData.contrasena,
         rol: usuarioData.rol,
@@ -45,6 +45,32 @@ export const createUsuario = async (usuarioData) => {
     }
 
     return await response.json();
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Login de usuario
+export const loginUsuario = async ({ correo, contrasena }) => {
+  try {
+    const response = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo, contrasena }),
+    });
+
+    if (!response.ok) {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        throw new Error(data.mensaje || data.message || 'Error en login');
+      } else {
+        const text = await response.text();
+        throw new Error(text || 'Error en login');
+      }
+    }
+
+    return await response.json(); // aquí regresa: { mensaje, rol, nombreCompleto, id }
   } catch (error) {
     throw error;
   }

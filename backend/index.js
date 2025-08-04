@@ -9,6 +9,9 @@ const clienteRoutes = require('./routes/clienteRoutes');
 const pedidoRoutes = require('./routes/pedidoRoutes');
 const inventarioRoutes = require('./routes/inventarioRoutes');
 const productoRoutes = require('./routes/productoRoutes');
+const reporteRoutes = require('./routes/reporteRoutes');
+
+
 
 dotenv.config();
 
@@ -30,6 +33,7 @@ app.use('/api/clientes', clienteRoutes);
 app.use('/api/pedidos', pedidoRoutes);
 app.use('/api/inventario', inventarioRoutes);
 app.use('/api/productos', productoRoutes);
+app.use('/api', reporteRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ Conectado a MongoDB'))

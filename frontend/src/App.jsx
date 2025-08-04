@@ -31,6 +31,9 @@ import InventarioList from "./inventario/InventarioList";
 import UsuarioList from "./usuarios/UsuarioList";
 import UsuarioForm from "./usuarios/UsuarioForm";
 
+// Reportes
+import ReportePDF from "./reportes/ReportePDF";
+
 function App() {
   return (
     <Routes>
@@ -66,6 +69,9 @@ function App() {
       <Route path="/usuarios" element={<UsuarioList />} />
       <Route path="/usuarios/agregar" element={<UsuarioForm />} />
       <Route path="/usuarios/editar/:id" element={<UsuarioForm />} />
+
+      {/* Reportes */}
+      <Route path="/reportes" element={<ReportePDF />} />
     </Routes>
   );
 }

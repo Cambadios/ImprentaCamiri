@@ -22,20 +22,24 @@ function Login() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        setMensaje('Error: ' + errorData.mensaje);
+        setMensaje('Error: ' + (errorData.mensaje || 'Credenciales inválidas'));
         return;
       }
 
       const data = await res.json();
-      console.log("Rol recibido:", data.rol); // 👈 para verificar el rol recibido
-      setMensaje(data.mensaje);
+      console.log("Rol recibido:", data.rol);
 
+      setMensaje(data.mensaje);
       if (data.mensaje.includes("exitoso")) {
         localStorage.setItem("role", data.rol);
+        localStorage.setItem("usuario", JSON.stringify(data.usuario)); // Puedes guardar más datos si deseas
 
-        if (data.rol === "admin") {
+        // ✅ Aceptar múltiples variantes del rol
+        const rol = data.rol.toLowerCase();
+
+        if (rol === "admin" || rol === "administrador") {
           navigate("/admin");
-        } else if (data.rol === "usuario") {
+        } else if (rol === "usuario" || rol === "usuario_normal") {
           navigate("/principal");
         } else {
           setMensaje("Rol desconocido: " + data.rol);

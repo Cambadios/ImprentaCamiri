@@ -86,7 +86,7 @@ const InventarioList = () => {
       {productos.length === 0 ? (
         <p style={{ textAlign: 'center' }}>No hay productos disponibles.</p>
       ) : (
-        <table className='hidden' >
+        <table style={tableStyle}>
           <thead>
             <tr>
               <th>Código</th>
@@ -225,7 +225,9 @@ const buttonStyle = {
 
 const tableStyle = {
   width: '100%',
-  borderColor: "black",
+  border: "1px solid",
+  borderSpacing: 0,
+
   marginTop: '20px'
 };
 

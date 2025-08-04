@@ -9,7 +9,7 @@ exports.createProducto = async (req, res) => {
       descripcion,
       esPorDocena,
       numDocenas,
-      imagenUrl
+      fechaIngreso
     } = req.body;
 
     const inventario = new Inventario({
@@ -18,7 +18,7 @@ exports.createProducto = async (req, res) => {
       descripcion,
       esPorDocena: esPorDocena || false,
       numDocenas: esPorDocena ? numDocenas || 0 : 0,
-      imagenUrl
+      fechaIngreso: fechaIngreso || Date.now()
     });
 
     await inventario.save();
@@ -48,7 +48,7 @@ exports.updateProducto = async (req, res) => {
       descripcion,
       esPorDocena,
       numDocenas,
-      imagenUrl
+      fechaIngreso
     } = req.body;
 
     const producto = await Inventario.findByIdAndUpdate(
@@ -59,7 +59,7 @@ exports.updateProducto = async (req, res) => {
         descripcion,
         esPorDocena: esPorDocena || false,
         numDocenas: esPorDocena ? numDocenas || 0 : 0,
-        imagenUrl
+        fechaIngreso
       },
       { new: true, runValidators: true }
     );
@@ -74,7 +74,7 @@ exports.updateProducto = async (req, res) => {
   }
 };
 
-// Eliminar un producto del inventario
+// Eliminar un producto en inventario
 exports.deleteProducto = async (req, res) => {
   try {
     const { id } = req.params;

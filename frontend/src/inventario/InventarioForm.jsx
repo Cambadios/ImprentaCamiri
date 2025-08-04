@@ -8,7 +8,6 @@ const InventarioForm = () => {
   const [descripcion, setDescripcion] = useState('');
   const [esPorDocena, setEsPorDocena] = useState(false);
   const [numDocenas, setNumDocenas] = useState('');
-  const [imagenUrl, setImagenUrl] = useState('');
 
   const navigate = useNavigate();
 
@@ -20,8 +19,7 @@ const InventarioForm = () => {
       cantidad,
       descripcion,
       esPorDocena,
-      numDocenas: esPorDocena ? numDocenas : 0,
-      imagenUrl
+      numDocenas: esPorDocena ? numDocenas : 0
     };
 
     try {
@@ -95,15 +93,6 @@ const InventarioForm = () => {
           onChange={(e) => setDescripcion(e.target.value)}
           required
           style={{ ...inputStyle, height: '80px' }}
-        />
-
-        <label>URL de la imagen:</label>
-        <input
-          type="text"
-          value={imagenUrl}
-          onChange={(e) => setImagenUrl(e.target.value)}
-          placeholder="https://..."
-          style={inputStyle}
         />
 
         <div style={buttonContainerStyle}>

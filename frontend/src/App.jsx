@@ -1,11 +1,14 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 
+// Login y recuperación de contraseña
 import Login from "./login/Login";
+import OlvideContrasena from "./login/OlvideContrasena";
+import RestablecerContrasena from "./login/RestablecerContrasena";
+
+// Dashboard principal
 import Principal from "./principal/principal";
 import Admin from "./admin/Admin";
-
-// Importar el nuevo Dashboard que muestra ambos dashboards juntos
 import Dashboard from "./dashboard/Dashboard";
 
 // Clientes
@@ -31,18 +34,16 @@ import UsuarioForm from "./usuarios/UsuarioForm";
 function App() {
   return (
     <Routes>
-      {/* Ruta para el login */}
+      {/* Login y recuperación */}
       <Route path="/" element={<Login />} />
-      
-      {/* Ruta principal */}
+      <Route path="/olvide-contrasena" element={<OlvideContrasena />} />
+      <Route path="/restablecer-contrasena/:token" element={<RestablecerContrasena />} />
+
+      {/* Paneles principales */}
       <Route path="/principal" element={<Principal />} />
-      
-      {/* Ruta Admin */}
       <Route path="/admin" element={<Admin />} />
-      
-      {/* Ruta Dashboard con nuevo componente */}
       <Route path="/dashboard" element={<Dashboard />} />
-      
+
       {/* Clientes */}
       <Route path="/clientes" element={<ClienteList />} />
       <Route path="/clientes/agregar" element={<ClienteForm />} />
@@ -66,7 +67,7 @@ function App() {
       <Route path="/usuarios/agregar" element={<UsuarioForm />} />
       <Route path="/usuarios/editar/:id" element={<UsuarioForm />} />
     </Routes>
-  ); 
+  );
 }
 
 export default App;

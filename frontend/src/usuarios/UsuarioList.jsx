@@ -13,7 +13,7 @@ const UsuarioList = () => {
     telefono: '',
     carnetIdentidad: '',
     rol: 'usuario_normal',
-    contraseña: '',
+    contrasena: '',
   });
 
   const [errores, setErrores] = useState({});
@@ -39,7 +39,7 @@ const UsuarioList = () => {
       telefono: '',
       carnetIdentidad: '',
       rol: 'usuario_normal',
-      contraseña: '',
+      contrasena: '',
     });
     setErrores({});
     setUsuarioEditando(null);
@@ -50,12 +50,12 @@ const UsuarioList = () => {
     setModo('editar');
     setUsuarioEditando(usuario);
     setFormData({
-      nombreCompleto: usuario.nombreCompleto,
-      correo: usuario.correo,
-      telefono: usuario.telefono,
-      carnetIdentidad: usuario.carnetIdentidad,
-      rol: usuario.rol,
-      contraseña: '',
+      nombreCompleto: usuario.nombreCompleto || '',
+      correo: usuario.correo || '',
+      telefono: usuario.telefono || '',
+      carnetIdentidad: usuario.carnetIdentidad || '',
+      rol: usuario.rol || 'usuario_normal',
+      contrasena: '',
     });
     setErrores({});
     setMostrarModal(true);
@@ -86,14 +86,14 @@ const UsuarioList = () => {
     }
     if (!formData.telefono.trim()) {
       nuevosErrores.telefono = 'El teléfono es obligatorio';
-    } else if (!/^\d{1,8}$/.test(formData.telefono)) {
+    } else if (!/^[0-9]{1,8}$/.test(formData.telefono)) {
       nuevosErrores.telefono = 'El teléfono debe tener máximo 8 dígitos numéricos';
     }
     if (!formData.carnetIdentidad.trim()) {
       nuevosErrores.carnetIdentidad = 'El carnet de identidad es obligatorio';
     }
-    if (modo === 'agregar' && !formData.contraseña.trim()) {
-      nuevosErrores.contraseña = 'La contraseña es obligatoria';
+    if (modo === 'agregar' && !formData.contrasena.trim()) {
+      nuevosErrores.contrasena = 'La contraseña es obligatoria';
     }
 
     setErrores(nuevosErrores);
@@ -108,7 +108,7 @@ const UsuarioList = () => {
         await createUsuario(formData);
         alert('Usuario agregado correctamente');
       } else if (modo === 'editar') {
-        const { contraseña, ...dataSinPass } = formData;
+        const { contrasena, ...dataSinPass } = formData;
         await updateUsuario(usuarioEditando._id, dataSinPass);
         alert('Usuario actualizado correctamente');
       }
@@ -135,11 +135,7 @@ const UsuarioList = () => {
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <button
           onClick={() => window.history.back()}
-          style={{
-            padding: '10px 20px',
-            fontSize: '1rem',
-            cursor: 'pointer',
-          }}
+          style={{ padding: '10px 20px', fontSize: '1rem', cursor: 'pointer' }}
         >
           ← Volver atrás
         </button>
@@ -150,11 +146,7 @@ const UsuarioList = () => {
       <div style={{ textAlign: 'center', marginBottom: '25px' }}>
         <button
           onClick={abrirModalAgregar}
-          style={{
-            padding: '12px 25px',
-            fontSize: '1.1rem',
-            cursor: 'pointer',
-          }}
+          style={{ padding: '12px 25px', fontSize: '1.1rem', cursor: 'pointer' }}
         >
           Agregar Usuario
         </button>
@@ -189,8 +181,8 @@ const UsuarioList = () => {
               <div>
                 <p><strong>Nombre:</strong> {usuario.nombreCompleto}</p>
                 <p><strong>Correo:</strong> {usuario.correo}</p>
-                <p><strong>Teléfono:</strong> {usuario.telefono}</p>
-                <p><strong>Carnet:</strong> {usuario.carnetIdentidad}</p>
+                <p><strong>Teléfono:</strong> {usuario.telefono || '-'}</p>
+                <p><strong>Carnet:</strong> {usuario.carnetIdentidad || '-'}</p>
                 <p><strong>Rol:</strong> {usuario.rol}</p>
               </div>
 
@@ -229,28 +221,18 @@ const UsuarioList = () => {
         </div>
       )}
 
-      {/* Modal para agregar / editar */}
       {mostrarModal && (
         <div
           style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: 'rgba(0,0,0,0.4)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
+            display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000,
           }}
         >
           <div
             style={{
-              backgroundColor: '#fff',
-              padding: '25px',
-              borderRadius: '8px',
-              width: '400px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              boxShadow: '0 0 12px rgba(0,0,0,0.25)',
+              backgroundColor: '#fff', padding: '25px', borderRadius: '8px', width: '400px',
+              maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 0 12px rgba(0,0,0,0.25)',
             }}
           >
             <h3 style={{ marginBottom: '15px' }}>
@@ -314,13 +296,13 @@ const UsuarioList = () => {
                 <label>Contraseña:</label>
                 <input
                   type="password"
-                  name="contraseña"
-                  value={formData.contraseña}
+                  name="contrasena"
+                  value={formData.contrasena}
                   onChange={manejarCambio}
                   style={inputStyle}
                   required
                 />
-                {errores.contraseña && <p style={errorStyle}>{errores.contraseña}</p>}
+                {errores.contrasena && <p style={errorStyle}>{errores.contrasena}</p>}
               </>
             )}
 

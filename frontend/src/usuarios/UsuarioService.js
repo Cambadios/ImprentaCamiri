@@ -17,13 +17,20 @@ export const getUsuarios = async () => {
   }
 };
 
-// Crear un nuevo usuario
+// Crear un nuevo usuario (con nombreCompleto)
 export const createUsuario = async (usuarioData) => {
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(usuarioData),
+      body: JSON.stringify({
+        nombreCompleto: usuarioData.nombre,  // 👈 Backend espera "nombreCompleto"
+        correo: usuarioData.correo,
+        contrasena: usuarioData.contrasena,
+        rol: usuarioData.rol,
+        telefono: usuarioData.telefono,
+        carnetIdentidad: usuarioData.carnetIdentidad,
+      }),
     });
 
     if (!response.ok) {

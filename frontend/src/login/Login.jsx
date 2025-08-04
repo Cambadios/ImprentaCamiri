@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import './Login.css';  // Asegúrate de que este archivo exista para estilos
+import { useNavigate, Link } from "react-router-dom";
+import './Login.css';
 import { urlApi } from "../api/api";
 
 function Login() {
   const [correo, setCorreo] = useState("");
-  const [contraseña, setContraseña] = useState("");
+  const [contrasena, setContrasena] = useState("");
   const [mensaje, setMensaje] = useState("");
   const navigate = useNavigate();
 
@@ -17,7 +17,7 @@ function Login() {
       const res = await fetch(urlApi + "/api/usuarios/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ correo, contraseña }),
+        body: JSON.stringify({ correo, contrasena }),
       });
 
       if (!res.ok) {
@@ -27,24 +27,23 @@ function Login() {
       }
 
       const data = await res.json();
+      console.log("Rol recibido:", data.rol); // 👈 para verificar el rol recibido
       setMensaje(data.mensaje);
 
       if (data.mensaje.includes("exitoso")) {
-        // Guardar el rol del usuario en localStorage
         localStorage.setItem("role", data.rol);
 
-        // Redirigir según el rol del usuario
-        if (data.rol === "administrador") {
+        if (data.rol === "admin") {
           navigate("/admin");
-        } else if (data.rol === "usuario_normal") {
+        } else if (data.rol === "usuario") {
           navigate("/principal");
         } else {
-          setMensaje("Rol desconocido");
+          setMensaje("Rol desconocido: " + data.rol);
         }
       }
     } catch (error) {
+      console.error("Error en login:", error);
       setMensaje("Error en la conexión con el servidor");
-      console.error(error);
     }
   };
 
@@ -70,8 +69,8 @@ function Login() {
 
           <input
             type="password"
-            value={contraseña}
-            onChange={(e) => setContraseña(e.target.value)}
+            value={contrasena}
+            onChange={(e) => setContrasena(e.target.value)}
             placeholder="Contraseña"
             className="input-field"
             required
@@ -81,6 +80,12 @@ function Login() {
             Iniciar Sesión
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: '10px' }}>
+          <Link to="/olvide-contrasena" className="forgot-link">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
 
         {mensaje && (
           <p className={`message ${mensaje.includes("exitoso") ? 'success' : 'error'}`}>

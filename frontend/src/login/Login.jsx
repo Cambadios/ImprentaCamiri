@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import './Login.css';
+import "./Login.css";
 import { urlApi } from "../api/api";
 
 function Login() {
@@ -11,32 +11,42 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMensaje('Intentando conectar...');
+    setMensaje("Intentando conectar...");
 
     try {
-      const res = await fetch(urlApi + "/api/usuarios/login", {
+      const res = await fetch(`${urlApi}/api/usuarios/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo, contrasena }),
       });
 
+      // Error HTTP
       if (!res.ok) {
-        const errorData = await res.json();
-        setMensaje('Error: ' + (errorData.mensaje || 'Credenciales inválidas'));
+        let errorMsg = "Credenciales inválidas";
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData?.mensaje || errorMsg;
+        } catch (_) {}
+        setMensaje("Error: " + errorMsg);
         return;
       }
 
+      // Éxito
       const data = await res.json();
-      console.log("Rol recibido:", data.rol);
+      setMensaje(data.mensaje || "Login exitoso");
 
-      setMensaje(data.mensaje);
-      if (data.mensaje.includes("exitoso")) {
-        localStorage.setItem("role", data.rol);
-        localStorage.setItem("usuario", JSON.stringify(data.usuario)); // Puedes guardar más datos si deseas
+      if ((data.mensaje || "").toLowerCase().includes("exitoso")) {
+        // Guardar solo lo que el backend devuelve realmente
+        localStorage.setItem("role", data.rol || "");
+        const userPayload = {
+          id: data.id,
+          nombreCompleto: data.nombreCompleto,
+          correo, // del formulario
+        };
+        localStorage.setItem("usuario", JSON.stringify(userPayload));
 
-        // ✅ Aceptar múltiples variantes del rol
-        const rol = data.rol.toLowerCase();
-
+        // Navegación por rol
+        const rol = (data.rol || "").toLowerCase();
         if (rol === "admin" || rol === "administrador") {
           navigate("/admin");
         } else if (rol === "usuario" || rol === "usuario_normal") {
@@ -54,19 +64,23 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-background"></div>
+
       <div className="login-form">
         <div className="login-avatar">
-          <img src="https://www.w3schools.com/w3images/avatar2.png" alt="Persona" />
+          <img
+            src="https://www.w3schools.com/w3images/avatar2.png"
+            alt="Persona"
+          />
         </div>
 
-        <h2 className="login-title">Bienvenido Imprenta Camiri</h2>
+        <h2 className="login-title">Iniciar Sesión</h2>
 
         <form onSubmit={handleSubmit}>
           <input
             type="email"
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
-            placeholder="Email"
+            placeholder="Correo"
             className="input-field"
             required
           />
@@ -85,14 +99,20 @@ function Login() {
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '10px' }}>
+        <div style={{ textAlign: "center", marginTop: 10 }}>
           <Link to="/olvide-contrasena" className="forgot-link">
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
 
         {mensaje && (
-          <p className={`message ${mensaje.includes("exitoso") ? 'success' : 'error'}`}>
+          <p
+            className={`message ${
+              (mensaje || "").toLowerCase().includes("exitoso")
+                ? "success"
+                : "error"
+            }`}
+          >
             {mensaje}
           </p>
         )}

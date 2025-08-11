@@ -2,11 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Base responsive y safe areas (iPhone) ===== */
+@layer base {
+  html, body, #root { height: 100%; }
 
-th, td {
-   text-align: left;
-   vertical-align: top;
-   border: 1px solid #7c7057;
-   border-collapse: collapse;
-   text-align: center;
+  /* Respetar las áreas seguras en iOS */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    @apply bg-stone-50 text-stone-800 antialiased;
+  }
+
+  /* Tipografía fluida base (ajustable con Tailwind en componentes) */
+  h1 { @apply text-2xl sm:text-3xl lg:text-4xl font-bold; }
+  h2 { @apply text-xl sm:text-2xl lg:text-3xl font-semibold; }
+  h3 { @apply text-lg sm:text-xl font-semibold; }
+  p  { @apply text-sm sm:text-base; }
 }
+
+/* ===== Tablas responsivas ===== */
+/* Evita estilos globales agresivos en th/td; usa una clase .table */
+.table {
+  @apply w-full border border-stone-300 rounded-xl overflow-hidden bg-white;
+  border-collapse: collapse; /* Mantener colapso */
+}
+
+.table th,
+.table td {
+  /* Alineación consistente */
+  text-align: center;
+  vertical-align: top;
+
+  /* Borde y espaciado */
+  border: 1px solid #7c7057;
+  padding: 0.5rem; /* 8px */
+}
+
+/* Encabezado con contraste */
+.table thead th {
+  @apply bg-stone-100 font-semibold;
+}
+
+/* Fila zebra opcional */
+.table tbody tr:nth-child(even) {
+  @apply bg-stone-50;
+}
+
+/* En móviles, permite scroll horizontal sin romper layout */
+.table-wrapper {
+  @apply w-full overflow-x-auto rounded-xl border border-stone-200;
+}
+
+/* ===== Accesibilidad y detalles de UX ===== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Scrollbar sutil (soporte WebKit) */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: #eee; }
+*::-webkit-scrollbar-thumb { background: #c7c0b3; border-radius: 8px; }
+*::-webkit-scrollbar-thumb:hover { background: #b2a896; }

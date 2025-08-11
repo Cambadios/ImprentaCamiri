@@ -1,93 +1,76 @@
-import React, { useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import "./Sidebar.css";
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
 
-const NAV_ITEMS = [
-  { to: "/admin", label: "Dashboard", icon: "📊" },
-  { to: "/clientes", label: "Cliente", icon: "🧑‍💼" },
-  { to: "/pedidos", label: "Pedido", icon: "🧾" },
+const items = [
+  { to: "/dashboard",  label: "Dashboard",  icon: "📊" },
+  { to: "/clientes",   label: "Cliente",    icon: "🧑‍💼" },
+  { to: "/pedidos",    label: "Pedido",     icon: "📋" },
   { to: "/inventario", label: "Inventario", icon: "📦" },
-  { to: "/productos", label: "Productos", icon: "🏷️" },
-  { to: "/usuarios", label: "Usuarios", icon: "👥" },
-  { to: "/reportes", label: "Reportes", icon: "🧩" },
+  { to: "/productos",  label: "Productos",  icon: "🧾" },
+  { to: "/usuarios",   label: "Usuarios",   icon: "👤" },
+  { to: "/reportes",   label: "Reportes",   icon: "📑" },
 ];
 
-export default function Sidebar() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [openUserMenu, setOpenUserMenu] = useState(false);
-
-  // Obtenemos usuario guardado en Login.jsx
-  const usuario = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem("usuario") || "{}");
-    } catch {
-      return {};
-    }
-  }, []);
-
-  const nombre = usuario?.nombreCompleto || "Usuario";
-
-  const logout = () => {
-    localStorage.removeItem("role");
-    localStorage.removeItem("usuario");
-    navigate("/login");
-  };
-
-  const goPerfil = () => navigate("/perfil");           // crea esa ruta cuando quieras
-  const goConfig = () => navigate("/configuracion");    // crea esa ruta cuando quieras
+export default function Sidebar({ open, onClose }) {
+  const { pathname } = useLocation();
 
   return (
-    <aside className="sb">
-      {/* Brand / logo redondo */}
-      <div className="sb-brand">
-        <div className="sb-logo">
-          <span className="sb-logo-text">
-            Imprenta<br />Camiri
-          </span>
+    <>
+      {/* Overlay móvil */}
+      <div
+        className={`md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity ${
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Drawer móvil / fija en ≥md */}
+      <aside
+        className={`
+          md:static md:translate-x-0 md:opacity-100 md:pointer-events-auto
+          fixed left-0 top-0 bottom-0 z-50 w-[84%] max-w-[320px]
+          bg-stone-100 border-r border-stone-200
+          px-4 sm:px-5 py-4 overflow-y-auto
+          transition-transform duration-300 ease-out
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          rounded-r-2xl md:rounded-none
+        `}
+        aria-label="Sidebar"
+      >
+        <div className="md:hidden mb-4 flex items-center justify-between">
+          <div className="font-bold">IMPRENTA CAMIRI</div>
+          <button onClick={onClose} className="rounded-xl border px-3 py-1.5">✕</button>
         </div>
-      </div>
 
-      {/* Navegación */}
-      <nav className="sb-nav">
-        {NAV_ITEMS.map(item => {
-          const active = location.pathname === item.to;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`sb-link ${active ? "active" : ""}`}
-            >
-              <span className="sb-ico" aria-hidden>{item.icon}</span>
-              <span className="sb-text">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Usuario + menú */}
-      <div className="sb-user">
-        <button
-          className="sb-user-btn"
-          onClick={() => setOpenUserMenu(v => !v)}
-          title="Cuenta"
-          type="button"
-        >
-          <div className="sb-user-avatar" aria-hidden>{nombre?.[0] || "U"}</div>
-          <div className="sb-user-info">
-            <span className="sb-user-name" title={nombre}>{nombre}</span>
-            <span className={`sb-user-caret ${openUserMenu ? "up" : ""}`}>▴</span>
+        <div className="hidden md:flex items-center gap-3 mb-6">
+          <div className="size-12 rounded-full bg-white shadow grid place-content-center text-xs font-bold">LOGO</div>
+          <div className="text-sm">
+            <div className="font-semibold">IMPRENTA</div>
+            <div className="text-stone-500">CAMIRI</div>
           </div>
-        </button>
+        </div>
 
-        {openUserMenu && (
-          <div className="sb-user-menu">
-            <button type="button" onClick={goPerfil}>Perfil</button>
-            <button type="button" onClick={goConfig}>Configuración</button>
-            <button type="button" className="danger" onClick={logout}>Cerrar sesión</button>
-          </div>
-        )}
-      </div>
-    </aside>
+        <nav className="flex flex-col gap-2">
+          {items.map((it) => {
+            const active = pathname.startsWith(it.to);
+            return (
+              <Link
+                key={it.to}
+                to={it.to}
+                onClick={onClose}
+                className={`flex items-center gap-3 rounded-xl px-3 py-3 border text-sm transition-all
+                ${active
+                  ? "border-stone-400 bg-stone-200/80 shadow-sm"
+                  : "border-stone-200 bg-white hover:bg-stone-100"
+                }`}
+              >
+                <span className="text-lg">{it.icon}</span>
+                <span className="font-medium tracking-wide">{it.label.toUpperCase()}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+    </>
   );
 }

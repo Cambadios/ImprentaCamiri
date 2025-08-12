@@ -1,26 +1,27 @@
 :root {
-  --sb-bg: #d1bd90;       /* Barra */
-  --sb-bg-2: #efe7d6;     /* Hover / active */
+  --sb-bg: #d1bd90; /* Barra */
+  --sb-bg-2: #efe7d6; /* Hover / active */
   --sb-text: #2e2a22;
   --sb-muted: #6b6457;
-  --sb-ring: rgba(0,0,0,.08);
+  --sb-ring: rgba(0, 0, 0, .08);
   --sb-danger: #b14136;
 }
 
 .sb {
   position: fixed;
   inset: 0 auto 0 0;
-  width: 240px; /* Ancho más grande */
+  width: 240px; /* Ancho de la barra lateral */
   background: var(--sb-bg);
   display: grid;
   grid-template-rows: auto 1fr auto;
   box-shadow: 2px 0 12px var(--sb-ring);
   z-index: 20;
-  font-size: 18px; /* Aumento el tamaño de la fuente */
-  transition: transform .3s ease; /* Transición para el efecto de abrir/cerrar */
+  font-size: 18px;
+  transition: transform .3s ease;
+  color: var(--sb-text);
 }
 
-/* Brand */
+/* Brand (Logo) */
 .sb-brand {
   padding: 18px 16px 8px;
   display: grid;
@@ -28,72 +29,72 @@
 }
 
 .sb-logo {
-    text-decoration: none; /* Quitar el subrayado en el enlace */
-
-  width: 100px; /* Aumento el tamaño del logo */
+  width: 100px;
   height: 100px;
   border-radius: 999px;
   background: radial-gradient(circle at 30% 30%, #fff 0%, #f7f0df 40%, #e6d7b7 100%);
-  box-shadow: inset 0 2px 6px rgba(0,0,0,.06), 0 4px 10px rgba(0,0,0,.08);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .06), 0 4px 10px rgba(0, 0, 0, .08);
   display: grid;
   place-items: center;
   text-align: center;
-  padding: 15px; /* Aumento el padding */
+  padding: 15px;
 }
-
-
 
 .sb-logo-text {
   font-weight: 800;
   color: var(--sb-text);
-  line-height: 1.05;
-  letter-spacing: .4px;
-  font-size: 12px;
+  font-size: 14px;
   text-transform: uppercase;
 }
 
 /* Navegación */
 .sb-nav {
-  padding: 10px;
+  padding: 20px 10px;
   display: grid;
-  gap: 20px; /* Espaciado mayor entre los elementos */
+  gap: 20px;
   overflow: auto;
-  justify-content: center; /* Centra los elementos en la navegación */
 }
 
 .sb-link {
   display: grid;
   grid-template-columns: 40px 1fr;
   align-items: center;
-  gap: 15px; /* Espaciado mayor entre los iconos y texto */
+  gap: 15px;
   padding: 15px 20px;
-  background: rgba(255,255,255,.36);
+  background: rgba(255, 255, 255, .36);
   border-radius: 12px;
   text-decoration: none;
   color: var(--sb-text);
   font-weight: 600;
-  box-shadow: 0 1px 0 rgba(0,0,0,.03);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .03);
   transition: transform .12s ease, background .15s ease, box-shadow .15s ease;
-  font-size: 16px; /* Aumento el tamaño de la fuente en los links */
+  font-size: 16px;
 }
 
-.sb-link:hover { transform: translateY(-1px); background: var(--sb-bg-2); }
-.sb-link.active { background: #f3ead5; box-shadow: inset 0 0 0 2px rgba(0,0,0,.05); }
+.sb-link:hover {
+  transform: translateY(-1px);
+  background: var(--sb-bg-2);
+}
+
+.sb-link.active {
+  background: #f3ead5;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .05);
+}
 
 .sb-ico {
-  font-size: 30px; /* Aumento el tamaño de los iconos */
+  font-size: 30px;
   filter: saturate(.9);
 }
 
 .sb-text {
-  font-size: 18px; /* Aumento el tamaño del texto */
+  font-size: 18px;
 }
 
 /* Usuario + menú */
 .sb-user {
   position: relative;
   padding: 10px;
-  border-top: 1px solid rgba(0,0,0,.05);
+  border-top: 1px solid rgba(0, 0, 0, .05);
 }
 
 .sb-user-btn {
@@ -103,7 +104,7 @@
   gap: 10px;
   align-items: center;
   padding: 8px;
-  background: rgba(255,255,255,.5);
+  background: rgba(255, 255, 255, .5);
   border: 0;
   border-radius: 12px;
   cursor: pointer;
@@ -132,7 +133,7 @@
 .sb-user-name {
   font-weight: 700;
   color: var(--sb-text);
-  font-size: 16px; /* Aumento el tamaño del nombre del usuario */
+  font-size: 16px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -154,7 +155,7 @@
   bottom: 64px;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
   padding: 8px;
   display: grid;
   gap: 6px;
@@ -197,7 +198,7 @@
   }
 }
 
-/* Sidebar */
+/* Sidebar para móvil */
 .sb {
   position: fixed;
   inset: 0 auto 0 0;
@@ -208,7 +209,7 @@
   box-shadow: 2px 0 12px var(--sb-ring);
   z-index: 20;
   font-size: 18px;
-  transition: transform .3s ease; /* Transición para el efecto de abrir/cerrar */
+  transition: transform .3s ease;
 }
 
 /* Botón hamburguesa */
@@ -235,19 +236,21 @@
 /* Mostrar el botón hamburguesa en pantallas pequeñas */
 @media (max-width: 768px) {
   .hamburger-menu {
-    display: flex;
+    display: flex; /* Muestra el botón en pantallas pequeñas */
   }
 
-  .sb {
-    transform: translateX(-100%); /* Inicialmente oculto en pantallas pequeñas */
+  /* Barra lateral cuando se cierra */
+  .sb.closed {
+    transform: translateX(-240px); /* Oculta la barra lateral */
   }
 
+  /* Barra lateral cuando se abre */
   .sb.open {
-    transform: translateX(0); /* Se mueve a la vista cuando se abre */
+    transform: translateX(0); /* Muestra la barra lateral */
   }
-}
 
-/* Ajustes adicionales */
-body.has-sidebar #root > * {
-  margin-left: 240px; /* Ancho de la sidebar */
+  /* El contenido se ajusta cuando la barra lateral se abre */
+  body.has-sidebar #root > * {
+    margin-left: 240px; /* Ancho de la sidebar */
+  }
 }

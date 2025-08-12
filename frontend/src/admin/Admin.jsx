@@ -86,8 +86,6 @@ function Admin() {
         <span className="date">{date}</span>
       </header>
 
-
-
       {/* Sidebar */}
       <nav className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
         {/* Brand circular */}

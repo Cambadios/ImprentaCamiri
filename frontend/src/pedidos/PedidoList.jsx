@@ -126,7 +126,7 @@ function PedidoList() {
           {pedidos.map(p => (
             <div key={p._id} style={cardStyle}>
               <h3>{p.producto ? p.producto.nombre : 'Producto no disponible'}</h3>
-              <p><strong>Cliente:</strong> {p.cliente ? p.cliente.nombre : 'Cliente no disponible'}</p>  {/* Muestra el nombre del cliente */}
+              <p><strong>Cliente:</strong> {p.cliente ? p.cliente.nombre + " " + p.cliente.apellido : 'Cliente no disponible'}</p>  {/* Muestra el nombre del cliente */}
               <p><strong>Cantidad:</strong> {p.cantidad}</p>
               <p><strong>Precio Total:</strong> Bs {p.precioTotal}</p>
               <p><strong>Pago Cliente:</strong> Bs {p.pagoCliente}</p>

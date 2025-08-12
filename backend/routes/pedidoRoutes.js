@@ -61,7 +61,7 @@ router.get('/', async (req, res) => {
   try {
     const pedidos = await Pedido.find()
       .populate('producto')  // Poblar detalles del producto
-      .populate('cliente', 'nombre')  // Poblar solo el campo `nombre` del cliente
+      .populate('cliente')  // Poblar solo el campo `nombre` del cliente
       .exec();
     res.status(200).json(pedidos);
   } catch (err) {
@@ -75,7 +75,7 @@ router.get('/:id', async (req, res) => {
   try {
     const pedido = await Pedido.findById(req.params.id)
       .populate('producto')  // Poblar detalles del producto
-      .populate('cliente', 'nombre')  // Poblar solo el campo `nombre` del cliente
+      .populate('cliente')  // Poblar solo el campo `nombre` del cliente
       .exec();
     if (!pedido) {
       return res.status(404).send('Pedido no encontrado');

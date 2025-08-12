@@ -102,5 +102,24 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ message: 'Error al eliminar cliente' });
   }
 });
+/// Buscar cliente por teléfono
+router.get('/buscar-por-telefono/:telefono', async (req, res) => {
+  try {
+    const { telefono } = req.params;
+    const cliente = await Cliente.findOne({ telefono });
+
+    if (!cliente) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+
+    // Si se encuentra el cliente, devolverlo
+    res.status(200).json(cliente);
+  } catch (err) {
+    console.error('Error al buscar cliente por teléfono:', err);
+    res.status(500).json({ message: 'Error al buscar cliente' });
+  }
+});
+
+
 
 module.exports = router;

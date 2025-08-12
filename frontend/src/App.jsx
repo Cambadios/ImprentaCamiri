@@ -34,6 +34,9 @@ import UsuarioList from "./usuarios/UsuarioList";
 // Reportes
 import ReportePDF from "./reportes/ReportePDF";
 
+// Layout que incluye la barra lateral
+import Layout from './components/Layout';  // Componente de Layout con Sidebar
+
 // ===== Guard de rutas (en el mismo archivo) =====
 function PrivateRoute({ children, roles = [] }) {
   const role = localStorage.getItem("role");
@@ -62,161 +65,45 @@ function App() {
 
       {/* Paneles protegidos */}
       <Route
-        path="/admin"
+        path="/"
         element={
           <PrivateRoute roles={["admin", "administrador"]}>
-            <Admin />
+            <Layout /> {/* Usamos Layout para mostrar la barra lateral */}
           </PrivateRoute>
         }
-      />
-      <Route
-        path="/principal"
-        element={
-          <PrivateRoute roles={["usuario", "usuario_normal", "admin", "administrador"]}>
-            <Principal />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <PrivateRoute roles={["admin", "administrador", "usuario", "usuario_normal"]}>
-            <DashboardNuevo />
-          </PrivateRoute>
-        }
-      />
+      >
+        <Route path="admin" element={<Admin />} />
+        <Route path="principal" element={<Principal />} />
+        <Route path="dashboard" element={<DashboardNuevo />} />
 
-      {/* Clientes */}
-      <Route
-        path="/clientes"
-        element={
-          <PrivateRoute roles={["admin", "administrador", "usuario", "usuario_normal"]}>
-            <ClienteList />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/clientes/agregar"
-        element={
-          <PrivateRoute roles={["admin", "administrador"]}>
-            <ClienteForm />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/clientes/editar/:id"
-        element={
-          <PrivateRoute roles={["admin", "administrador"]}>
-            <ClienteForm />
-          </PrivateRoute>
-        }
-      />
+        {/* Clientes */}
+        <Route path="clientes" element={<ClienteList />} />
+        <Route path="clientes/agregar" element={<ClienteForm />} />
+        <Route path="clientes/editar/:id" element={<ClienteForm />} />
 
-      {/* Inventario */}
-      <Route
-        path="/inventario"
-        element={
-          <PrivateRoute roles={["admin", "administrador", "usuario", "usuario_normal"]}>
-            <InventarioList />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/inventario/editar/:id"
-        element={
-          <PrivateRoute roles={["admin", "administrador"]}>
-            <InventarioForm />
-          </PrivateRoute>
-        }
-      />
+        {/* Inventario */}
+        <Route path="inventario" element={<InventarioList />} />
+        <Route path="inventario/editar/:id" element={<InventarioForm />} />
+        <Route path="inventario/agregar" element={<InventarioForm />} />
 
-      {/* Productos */}
-      <Route
-        path="/productos"
-        element={
-          <PrivateRoute roles={["admin", "administrador", "usuario", "usuario_normal"]}>
-            <ProductoList />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/productos/agregar"
-        element={
-          <PrivateRoute roles={["admin", "administrador"]}>
-            <ProductoForm />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/productos/editar/:id"
-        element={
-          <PrivateRoute roles={["admin", "administrador"]}>
-            <ProductoForm />
-          </PrivateRoute>
-        }
-      />
+        {/* Productos */}
+        <Route path="productos" element={<ProductoList />} />
+        <Route path="productos/agregar" element={<ProductoForm />} />
+        <Route path="productos/editar/:id" element={<ProductoForm />} />
 
-      {/* Pedidos */}
-      <Route
-        path="/pedidos"
-        element={
-          <PrivateRoute roles={["admin", "administrador", "usuario", "usuario_normal"]}>
-            <PedidoList />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/pedidos/agregar"
-        element={
-          <PrivateRoute roles={["admin", "administrador", "usuario", "usuario_normal"]}>
-            <PedidoForm />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/pedidos/editar/:id"
-        element={
-          <PrivateRoute roles={["admin", "administrador"]}>
-            <PedidoForm />
-          </PrivateRoute>
-        }
-      />
+        {/* Pedidos */}
+        <Route path="pedidos" element={<PedidoList />} />
+        <Route path="pedidos/agregar" element={<PedidoForm />} />
+        <Route path="pedidos/editar/:id" element={<PedidoForm />} />
 
-      {/* Usuarios */}
-      <Route
-        path="/usuarios"
-        element={
-          <PrivateRoute roles={["admin", "administrador"]}>
-            <UsuarioList />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/usuarios/agregar"
-        element={
-          <PrivateRoute roles={["admin", "administrador"]}>
-            <UsuarioForm />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/usuarios/editar/:id"
-        element={
-          <PrivateRoute roles={["admin", "administrador"]}>
-            <UsuarioForm />
-          </PrivateRoute>
-        }
-      />
+        {/* Usuarios */}
+        <Route path="usuarios" element={<UsuarioList />} />
+        <Route path="usuarios/agregar" element={<UsuarioForm />} />
+        <Route path="usuarios/editar/:id" element={<UsuarioForm />} />
 
-      {/* Reportes */}
-      <Route
-        path="/reportes"
-        element={
-          <PrivateRoute roles={["admin", "administrador", "usuario", "usuario_normal"]}>
-            <ReportePDF />
-          </PrivateRoute>
-        }
-      />
+        {/* Reportes */}
+        <Route path="reportes" element={<ReportePDF />} />
+      </Route>
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/login" replace />} />

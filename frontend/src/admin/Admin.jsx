@@ -86,17 +86,7 @@ function Admin() {
         <span className="date">{date}</span>
       </header>
 
-      {/* Hamburguesa */}
-      <button
-        className={`hamburger-menu ${isSidebarOpen ? "open" : ""}`}
-        onClick={toggleSidebar}
-        aria-label="Abrir/cerrar menú"
-        type="button"
-      >
-        <span className="line" />
-        <span className="line" />
-        <span className="line" />
-      </button>
+
 
       {/* Sidebar */}
       <nav className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>

@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 
 const NAV_ITEMS = [
-  { to: "/admin", label: "Dashboard", icon: "📊" },
+  { to: "/dashboard", label: "Dashboard", icon: "📊" },
   { to: "/clientes", label: "Cliente", icon: "🧑‍💼" },
   { to: "/pedidos", label: "Pedido", icon: "🧾" },
   { to: "/inventario", label: "Inventario", icon: "📦" },
@@ -34,23 +34,25 @@ export default function Sidebar() {
     navigate("/login");
   };
 
-  const goPerfil = () => navigate("/perfil");           // crea esa ruta cuando quieras
-  const goConfig = () => navigate("/configuracion");    // crea esa ruta cuando quieras
+  const goPerfil = () => navigate("/perfil");
+  const goConfig = () => navigate("/configuracion");
 
   return (
     <aside className="sb">
       {/* Brand / logo redondo */}
       <div className="sb-brand">
-        <div className="sb-logo">
-          <span className="sb-logo-text">
-            Imprenta<br />Camiri
-          </span>
-        </div>
+        <Link to="/admin"> {/* Envolvemos con un Link que redirige a "/admin" */}
+          <div className="sb-logo">
+            <span className="sb-logo-text">
+              Imprenta<br />Camiri
+            </span>
+          </div>
+        </Link>
       </div>
 
       {/* Navegación */}
       <nav className="sb-nav">
-        {NAV_ITEMS.map(item => {
+        {NAV_ITEMS.map((item) => {
           const active = location.pathname === item.to;
           return (
             <Link
@@ -58,7 +60,9 @@ export default function Sidebar() {
               to={item.to}
               className={`sb-link ${active ? "active" : ""}`}
             >
-              <span className="sb-ico" aria-hidden>{item.icon}</span>
+              <span className="sb-ico" aria-hidden>
+                {item.icon}
+              </span>
               <span className="sb-text">{item.label}</span>
             </Link>
           );
@@ -69,22 +73,34 @@ export default function Sidebar() {
       <div className="sb-user">
         <button
           className="sb-user-btn"
-          onClick={() => setOpenUserMenu(v => !v)}
+          onClick={() => setOpenUserMenu((v) => !v)}
           title="Cuenta"
           type="button"
         >
-          <div className="sb-user-avatar" aria-hidden>{nombre?.[0] || "U"}</div>
+          <div className="sb-user-avatar" aria-hidden>
+            {nombre?.[0] || "U"}
+          </div>
           <div className="sb-user-info">
-            <span className="sb-user-name" title={nombre}>{nombre}</span>
-            <span className={`sb-user-caret ${openUserMenu ? "up" : ""}`}>▴</span>
+            <span className="sb-user-name" title={nombre}>
+              {nombre}
+            </span>
+            <span className={`sb-user-caret ${openUserMenu ? "up" : ""}`}>
+              ▴
+            </span>
           </div>
         </button>
 
         {openUserMenu && (
           <div className="sb-user-menu">
-            <button type="button" onClick={goPerfil}>Perfil</button>
-            <button type="button" onClick={goConfig}>Configuración</button>
-            <button type="button" className="danger" onClick={logout}>Cerrar sesión</button>
+            <button type="button" onClick={goPerfil}>
+              Perfil
+            </button>
+            <button type="button" onClick={goConfig}>
+              Configuración
+            </button>
+            <button type="button" className="danger" onClick={logout}>
+              Cerrar sesión
+            </button>
           </div>
         )}
       </div>

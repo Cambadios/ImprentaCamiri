@@ -4,19 +4,20 @@ import { getPedidos, deletePedido } from './PedidoService';
 import VolverPrincipal from '../comunes/VolverPrincipal';
 import { Link } from 'react-router-dom';
 import { urlApi } from '../api/api';
+import Modal from '../components/Modal'; // Importamos el modal
 
 function PedidoList() {
   const [pedidos, setPedidos] = useState([]);
-  const [pedidosOriginales, setPedidosOriginales] = useState([]);
-  const [estadoFiltro, setEstadoFiltro] = useState('');
   const [pedidoEditando, setPedidoEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [estadoFiltro, setEstadoFiltro] = useState('');
+  const [pedidosOriginales, setPedidosOriginales] = useState([]);
 
   useEffect(() => {
     const fetchPedidos = async () => {
       const data = await getPedidos();
       setPedidos(data);
-      setPedidosOriginales(data); // para filtrar y restaurar
+      setPedidosOriginales(data); // Para filtrar y restaurar
     };
     fetchPedidos();
   }, []);
@@ -43,7 +44,7 @@ function PedidoList() {
   };
 
   const abrirModal = (pedido) => {
-    setPedidoEditando({ ...pedido });
+    setPedidoEditando(pedido);
     setMostrarModal(true);
   };
 
@@ -101,7 +102,7 @@ function PedidoList() {
         <button onClick={aplicarFiltro} style={{ marginLeft: '10px', ...buttonStyle }}>
           Buscar
         </button>
-        <button onClick={limpiarFiltro} style={{ marginLeft: '10px', ...buttonStyle, backgroundColor: '#6c  757d' }}>
+        <button onClick={limpiarFiltro} style={{ marginLeft: '10px', ...buttonStyle, backgroundColor: '#6c757d' }}>
           Ver todos
         </button>
       </div>
@@ -112,7 +113,7 @@ function PedidoList() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center' }}>
           {pedidos.map(p => (
             <div key={p._id} style={cardStyle}>
-              <h3>{p.producto ? p.producto.nombre : 'Producto no disponible'}</h3> {/* Mostrar nombre del producto */}
+              <h3>{p.producto ? p.producto.nombre : 'Producto no disponible'}</h3>
               <p><strong>Cliente:</strong> {p.cliente}</p>
               <p><strong>Cantidad:</strong> {p.cantidad}</p>
               <p><strong>Precio Total:</strong> Bs {p.precioTotal}</p>
@@ -140,82 +141,78 @@ function PedidoList() {
       )}
 
       {/* Modal de edición */}
-      {mostrarModal && pedidoEditando && (
-        <div style={modalOverlayStyle}>
-          <div style={modalStyle}>
-            <h3>Editar Pedido</h3>
+      <Modal showModal={mostrarModal} handleClose={cerrarModal}>
+        <h3>Editar Pedido</h3>
 
-            <label>Cliente:</label>
-            <input
-              type="text"
-              value={pedidoEditando.cliente}
-              onChange={(e) => setPedidoEditando({ ...pedidoEditando, cliente: e.target.value })}
-              style={inputStyle}
-            />
+        <label>Cliente:</label>
+        <input
+          type="text"
+          value={pedidoEditando?.cliente}
+          onChange={(e) => setPedidoEditando({ ...pedidoEditando, cliente: e.target.value })}
+          style={inputStyle}
+        />
 
-            <label>Producto:</label>
-            <input
-              type="text"
-              value={pedidoEditando.producto}
-              onChange={(e) => setPedidoEditando({ ...pedidoEditando, producto: e.target.value })}
-              style={inputStyle}
-            />
+        <label>Producto:</label>
+        <input
+          type="text"
+          value={pedidoEditando?.producto}
+          onChange={(e) => setPedidoEditando({ ...pedidoEditando, producto: e.target.value })}
+          style={inputStyle}
+        />
 
-            <label>Cantidad:</label>
-            <input
-              type="number"
-              value={pedidoEditando.cantidad}
-              onChange={(e) => setPedidoEditando({ ...pedidoEditando, cantidad: e.target.value })}
-              style={inputStyle}
-            />
+        <label>Cantidad:</label>
+        <input
+          type="number"
+          value={pedidoEditando?.cantidad}
+          onChange={(e) => setPedidoEditando({ ...pedidoEditando, cantidad: e.target.value })}
+          style={inputStyle}
+        />
 
-            <label>Precio Total (Bs):</label>
-            <input
-              type="number"
-              value={pedidoEditando.precioTotal}
-              onChange={(e) => setPedidoEditando({ ...pedidoEditando, precioTotal: e.target.value })}
-              style={inputStyle}
-            />
+        <label>Precio Total (Bs):</label>
+        <input
+          type="number"
+          value={pedidoEditando?.precioTotal}
+          onChange={(e) => setPedidoEditando({ ...pedidoEditando, precioTotal: e.target.value })}
+          style={inputStyle}
+        />
 
-            <label>Pago del Cliente (Bs):</label>
-            <input
-              type="number"
-              value={pedidoEditando.pagoCliente}
-              onChange={(e) => setPedidoEditando({ ...pedidoEditando, pagoCliente: e.target.value })}
-              style={inputStyle}
-            />
+        <label>Pago del Cliente (Bs):</label>
+        <input
+          type="number"
+          value={pedidoEditando?.pagoCliente}
+          onChange={(e) => setPedidoEditando({ ...pedidoEditando, pagoCliente: e.target.value })}
+          style={inputStyle}
+        />
 
-            <label>Estado:</label>
-            <select
-              value={pedidoEditando.estado}
-              onChange={(e) => setPedidoEditando({ ...pedidoEditando, estado: e.target.value })}
-              style={inputStyle}
-            >
-              <option>Pendiente</option>
-              <option>En proceso</option>
-              <option>Entregado</option>
-              <option>Cancelado</option>
-            </select>
+        <label>Estado:</label>
+        <select
+          value={pedidoEditando?.estado}
+          onChange={(e) => setPedidoEditando({ ...pedidoEditando, estado: e.target.value })}
+          style={inputStyle}
+        >
+          <option>Pendiente</option>
+          <option>En proceso</option>
+          <option>Entregado</option>
+          <option>Cancelado</option>
+        </select>
 
-            <label>Fecha de Entrega:</label>
-            <input
-              type="date"
-              value={pedidoEditando.fechaEntrega ? pedidoEditando.fechaEntrega.split('T')[0] : ''}
-              onChange={(e) => setPedidoEditando({ ...pedidoEditando, fechaEntrega: e.target.value })}
-              style={inputStyle}
-            />
+        <label>Fecha de Entrega:</label>
+        <input
+          type="date"
+          value={pedidoEditando?.fechaEntrega ? pedidoEditando?.fechaEntrega.split('T')[0] : ''}
+          onChange={(e) => setPedidoEditando({ ...pedidoEditando, fechaEntrega: e.target.value })}
+          style={inputStyle}
+        />
 
-            <div style={{ marginTop: '20px', textAlign: 'right' }}>
-              <button onClick={cerrarModal} style={{ ...buttonStyle, backgroundColor: '#6c757d' }}>
-                Cancelar
-              </button>
-              <button onClick={guardarCambios} style={{ ...buttonStyle, backgroundColor: '#28a745', marginLeft: '10px' }}>
-                Guardar
-              </button>
-            </div>
-          </div>
+        <div style={{ marginTop: '20px', textAlign: 'right' }}>
+          <button onClick={cerrarModal} style={{ ...buttonStyle, backgroundColor: '#6c757d' }}>
+            Cancelar
+          </button>
+          <button onClick={guardarCambios} style={{ ...buttonStyle, backgroundColor: '#28a745', marginLeft: '10px' }}>
+            Guardar
+          </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
@@ -236,7 +233,6 @@ const getEstadoColor = (estado) => {
   }
 };
 
-// 🎨 Estilos
 const buttonStyle = {
   padding: '10px 15px',
   borderRadius: '5px',

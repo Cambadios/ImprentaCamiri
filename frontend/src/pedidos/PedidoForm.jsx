@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPedido } from './PedidoService';
 import { urlApi } from '../api/api';
+import Modal from '../components/Modal'; // Importamos el Modal
 
 const getClientes = async () => {
   try {
-    const response = await fetch(urlApi + 'api/clientes');
+    const response = await fetch(urlApi + '/api/clientes');
     return await response.json();
   } catch (error) {
     console.error('Error al obtener clientes', error);
@@ -15,7 +16,7 @@ const getClientes = async () => {
 
 const getProductos = async () => {
   try {
-    const response = await fetch (urlApi + '/api/productos');
+    const response = await fetch(urlApi + '/api/productos');
     return await response.json();
   } catch (error) {
     console.error('Error al obtener productos', error);
@@ -33,6 +34,9 @@ const PedidoForm = () => {
   const [fechaEntrega, setFechaEntrega] = useState('');
   const [clientes, setClientes] = useState([]);
   const [productos, setProductos] = useState([]);
+  const [clienteId, setClienteId] = useState('');
+  const [telefonoCliente, setTelefonoCliente] = useState(''); // Campo para el teléfono del cliente
+  const [mostrarModal, setMostrarModal] = useState(true);  // Controla si el modal se debe mostrar
 
   const navigate = useNavigate();
 
@@ -48,11 +52,29 @@ const PedidoForm = () => {
     fetchData();
   }, []);
 
+  // Función para buscar cliente por teléfono
+  const buscarClientePorTelefono = async () => {
+    try {
+      const response = await fetch(urlApi + `/api/clientes/buscar-por-telefono/${telefonoCliente}`);
+      const clienteData = await response.json();
+      if (clienteData) {
+        setCliente(`${clienteData.nombre} ${clienteData.apellido}`); // Completa el nombre del cliente
+        setClienteId(clienteData._id); // Guardamos el ID del cliente encontrado
+      } else {
+        alert('Cliente no encontrado');
+        setCliente(''); // Limpiar el nombre si no se encuentra el cliente
+      }
+    } catch (error) {
+      console.error('Error al buscar cliente', error);
+      alert('Error al buscar el cliente');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const pedido = {
-      cliente,
+      cliente: clienteId, // Usamos el ID del cliente encontrado
       producto,
       cantidad,
       precioTotal,
@@ -71,7 +93,7 @@ const PedidoForm = () => {
   };
 
   const handleVolver = () => {
-    navigate('/pedidos');
+    navigate('/pedidos'); // Regresa a la lista de pedidos
   };
 
   const handleProductoChange = (e) => {
@@ -93,95 +115,125 @@ const PedidoForm = () => {
     setPrecioTotal(productoSeleccionado ? productoSeleccionado.precioUnitario * nuevaCantidad : 0);
   };
 
+  // Validación para solo números y exactamente 8 dígitos
+  const handleTelefonoChange = (e) => {
+    const value = e.target.value;
+    // Solo números y máximo 8 dígitos
+    if (/^\d{0,8}$/.test(value)) {
+      setTelefonoCliente(value);
+    }
+  };
+
   return (
-    <div style={{ maxWidth: '500px', margin: 'auto', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '5px' }}>
-      <button onClick={handleVolver} style={{ marginBottom: '20px' }}>
-        ← Volver a Pedidos
-      </button>
-      <h2>Agregar Pedido</h2>
-      <form onSubmit={handleSubmit}>
-        <label>Cliente:</label>
-        <input
-          list="clientes"
-          value={cliente}
-          onChange={(e) => setCliente(e.target.value)}
-          required
-          placeholder="Selecciona un cliente"
-          style={inputStyle}
-        />
-        <datalist id="clientes">
-          {clientes.map((c) => (
-            <option key={c._id} value={`${c.nombre} ${c.apellido}`} />
-          ))}
-        </datalist>
+    <div>
+      {/* Modal para Agregar Pedido */}
+      <Modal showModal={mostrarModal} handleClose={() => setMostrarModal(false)}>
+        <div style={{ maxWidth: '500px', margin: 'auto', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '5px' }}>
+          <button onClick={handleVolver} style={{ marginBottom: '20px' }}>
+            ← Volver a Pedidos
+          </button>
+          <h2>Agregar Pedido</h2>
+          <form onSubmit={handleSubmit}>
+            {/* Campo para buscar cliente por teléfono */}
+            <label>Teléfono del Cliente (8 dígitos):</label>
+            <input
+              type="text"
+              value={telefonoCliente}
+              onChange={handleTelefonoChange}
+              placeholder="Ingrese teléfono (8 dígitos)"
+              style={inputStyle}
+              maxLength="8"  // Limita a 8 caracteres
+            />
+            <button type="button" onClick={buscarClientePorTelefono} style={{ marginBottom: '10px' }}>
+              Buscar Cliente
+            </button>
 
-        <label>Producto:</label>
-        <select
-          value={producto}
-          onChange={handleProductoChange}
-          required
-          style={inputStyle}
-        >
-          <option value="">Selecciona un producto</option>
-          {productos.map((p) => (
-            <option key={p._id} value={p._id}>
-              {p.nombre} - Bs {p.precioUnitario}
-            </option>
-          ))}
-        </select>
+            {/* Campo de nombre del cliente (autocompletado) */}
+            {cliente && (
+              <div>
+                <label>Nombre del Cliente:</label>
+                <input type="text" value={cliente} disabled style={inputStyle} />
+              </div>
+            )}
 
-        <label>Cantidad:</label>
-        <input
-          type="number"
-          value={cantidad}
-          onChange={handleCantidadChange}
-          required
-          style={inputStyle}
-          min="1"
-        />
+            {/* Producto */}
+            <label>Producto:</label>
+            <select
+              value={producto}
+              onChange={handleProductoChange}
+              required
+              style={inputStyle}
+            >
+              <option value="">Selecciona un producto</option>
+              {productos.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.nombre} - Bs {p.precioUnitario}
+                </option>
+              ))}
+            </select>
 
-        <label>Precio Total (Bs):</label>
-        <input
-          type="text"
-          value={`Bs ${precioTotal.toFixed(2)}`}
-          readOnly
-          style={inputStyle}
-        />
+            {/* Otros campos de pedido */}
+            <label>Cantidad:</label>
+            <input
+              type="number"
+              value={cantidad}
+              onChange={handleCantidadChange}
+              required
+              style={inputStyle}
+              min="1"
+            />
 
-        <label>Pago del Cliente (Bs):</label>
-        <input
-          type="number"
-          value={pagoCliente}
-          onChange={(e) => setPagoCliente(e.target.value)}
-          required
-          style={inputStyle}
-        />
+            <label>Precio Total (Bs):</label>
+            <input
+              type="text"
+              value={`Bs ${precioTotal.toFixed(2)}`}
+              readOnly
+              style={inputStyle}
+            />
 
-        <p><strong>Saldo Pendiente:</strong> Bs {calcularSaldo().toFixed(2)}</p>
+            <label>Pago del Cliente (Bs):</label>
+            <input
+              type="number"
+              value={pagoCliente}
+              onChange={(e) => setPagoCliente(e.target.value)}
+              required
+              style={inputStyle}
+            />
 
-        <label>Estado:</label>
-        <select
-          value={estado}
-          onChange={(e) => setEstado(e.target.value)}
-          required
-          style={inputStyle}
-        >
-          <option>Pendiente</option>
-          <option>En proceso</option>
-          <option>Entregado</option>
-          <option>Cancelado</option>
-        </select>
+            <p><strong>Saldo Pendiente:</strong> Bs {calcularSaldo().toFixed(2)}</p>
 
-        <label>Fecha de Entrega Estimada:</label>
-        <input
-          type="date"
-          value={fechaEntrega}
-          onChange={(e) => setFechaEntrega(e.target.value)}
-          style={inputStyle}
-        />
+            <label>Estado:</label>
+            <select
+              value={estado}
+              onChange={(e) => setEstado(e.target.value)}
+              required
+              style={inputStyle}
+            >
+              <option>Pendiente</option>
+              <option>En proceso</option>
+              <option>Entregado</option>
+              <option>Cancelado</option>
+            </select>
 
-        <button type="submit" style={{ padding: '10px 20px' }}>Agregar Pedido</button>
-      </form>
+            <label>Fecha de Entrega Estimada:</label>
+            <input
+              type="date"
+              value={fechaEntrega}
+              onChange={(e) => setFechaEntrega(e.target.value)}
+              style={inputStyle}
+            />
+
+            <div style={{ marginTop: '20px', textAlign: 'right' }}>
+              <button onClick={() => setMostrarModal(false)} style={{ ...buttonStyle, backgroundColor: '#6c757d' }}>
+                Cancelar
+              </button>
+              <button type="submit" style={{ ...buttonStyle, backgroundColor: '#28a745', marginLeft: '10px' }}>
+                Agregar Pedido
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
     </div>
   );
 };
@@ -192,6 +244,14 @@ const inputStyle = {
   padding: '8px',
   borderRadius: '4px',
   border: '1px solid #ccc'
+};
+
+const buttonStyle = {
+  padding: '10px 20px',
+  borderRadius: '5px',
+  border: 'none',
+  color: '#fff',
+  cursor: 'pointer'
 };
 
 export default PedidoForm;

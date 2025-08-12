@@ -1,6 +1,8 @@
+// src/inventario/InventarioForm.jsx
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { urlApi } from '../api/api';
+import Modal from '../components/Modal'; // Importamos el Modal
 
 const InventarioForm = () => {
   const [nombre, setNombre] = useState('');
@@ -8,18 +10,17 @@ const InventarioForm = () => {
   const [descripcion, setDescripcion] = useState('');
   const [esPorDocena, setEsPorDocena] = useState(false);
   const [numDocenas, setNumDocenas] = useState('');
-
+  const [mostrarModal, setMostrarModal] = useState(true);  // Modal control
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const producto = {
       nombre,
       cantidad,
       descripcion,
       esPorDocena,
-      numDocenas: esPorDocena ? numDocenas : 0
+      numDocenas: esPorDocena ? numDocenas : 0,
     };
 
     try {
@@ -42,102 +43,85 @@ const InventarioForm = () => {
   };
 
   return (
-    <div style={containerStyle}>
-      <h2 style={headerStyle}>Agregar Producto al Inventario</h2>
+    <div>
+      <Modal showModal={mostrarModal} handleClose={() => setMostrarModal(false)}>
+        <h2>Agregar Producto al Inventario</h2>
 
-      <form onSubmit={handleSubmit}>
-        <label>Nombre del producto:</label>
-        <input
-          type="text"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          required
-          style={inputStyle}
-        />
-
-        <label>Cantidad:</label>
-        <input
-          type="number"
-          value={cantidad}
-          onChange={(e) => setCantidad(e.target.value)}
-          required
-          style={inputStyle}
-        />
-
-        <label>
+        <form onSubmit={handleSubmit}>
+          <label>Nombre del producto:</label>
           <input
-            type="checkbox"
-            checked={esPorDocena}
-            onChange={(e) => setEsPorDocena(e.target.checked)}
-            style={{ marginRight: '10px' }}
+            type="text"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+            style={inputStyle}
           />
-          ¿El producto es por docena?
-        </label>
 
-        {esPorDocena && (
-          <>
-            <label>Cantidad de docenas:</label>
+          <label>Cantidad:</label>
+          <input
+            type="number"
+            value={cantidad}
+            onChange={(e) => setCantidad(e.target.value)}
+            required
+            style={inputStyle}
+          />
+
+          <label>
             <input
-              type="number"
-              value={numDocenas}
-              onChange={(e) => setNumDocenas(e.target.value)}
-              required
-              style={inputStyle}
+              type="checkbox"
+              checked={esPorDocena}
+              onChange={(e) => setEsPorDocena(e.target.checked)}
+              style={{ marginRight: '10px' }}
             />
-          </>
-        )}
+            ¿El producto es por docena?
+          </label>
 
-        <label>Descripción:</label>
-        <textarea
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          required
-          style={{ ...inputStyle, height: '80px' }}
-        />
+          {esPorDocena && (
+            <>
+              <label>Cantidad de docenas:</label>
+              <input
+                type="number"
+                value={numDocenas}
+                onChange={(e) => setNumDocenas(e.target.value)}
+                required
+                style={inputStyle}
+              />
+            </>
+          )}
 
-        <div style={buttonContainerStyle}>
-          <Link to="/inventario">
-            <button type="button" style={buttonCancelStyle}>
-              Volver al Inventario
+          <label>Descripción:</label>
+          <textarea
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            required
+            style={{ ...inputStyle, height: '80px' }}
+          />
+
+          <div style={buttonContainerStyle}>
+            <button type="button" onClick={() => navigate('/inventario')} style={buttonCancelStyle}>
+              Cancelar
             </button>
-          </Link>
-
-          <button type="submit" style={buttonSubmitStyle}>
-            Agregar
-          </button>
-        </div>
-      </form>
+            <button type="submit" style={buttonSubmitStyle}>Agregar</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
 
 // Estilos
-const containerStyle = {
-  maxWidth: '500px',
-  margin: '30px auto',
-  padding: '20px',
-  backgroundColor: '#f4f4f4',
-  borderRadius: '10px',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-};
-
-const headerStyle = {
-  textAlign: 'center',
-  marginBottom: '20px'
-};
-
 const inputStyle = {
   width: '100%',
   padding: '10px',
   marginBottom: '15px',
   borderRadius: '5px',
-  border: '1px solid #ccc'
+  border: '1px solid #ccc',
 };
 
 const buttonContainerStyle = {
   display: 'flex',
   justifyContent: 'space-between',
-  marginTop: '20px'
+  marginTop: '20px',
 };
 
 const buttonCancelStyle = {
@@ -146,7 +130,7 @@ const buttonCancelStyle = {
   color: '#fff',
   border: 'none',
   borderRadius: '5px',
-  cursor: 'pointer'
+  cursor: 'pointer',
 };
 
 const buttonSubmitStyle = {
@@ -155,7 +139,7 @@ const buttonSubmitStyle = {
   color: '#fff',
   border: 'none',
   borderRadius: '5px',
-  cursor: 'pointer'
+  cursor: 'pointer',
 };
 
 export default InventarioForm;

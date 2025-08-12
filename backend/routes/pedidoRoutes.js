@@ -1,6 +1,6 @@
-// routes/pedidoroutes.js
 const express = require('express');
 const Pedido = require('../models/pedido');
+const Cliente = require('../models/cliente'); // Asegúrate de importar el modelo Cliente
 const router = express.Router();
 
 // Crear un nuevo pedido
@@ -16,7 +16,14 @@ router.post('/', async (req, res) => {
       fechaEntrega
     } = req.body;
 
-    if (!cliente || !producto || !cantidad || !precioTotal) {
+    // Validar que el cliente existe
+    const clienteExistente = await Cliente.findById(cliente);
+    if (!clienteExistente) {
+      return res.status(400).send('El cliente no existe');
+    }
+
+    // Validación de campos obligatorios
+    if (!producto || !cantidad || !precioTotal) {
       return res.status(400).send('Faltan campos obligatorios');
     }
 
@@ -31,10 +38,10 @@ router.post('/', async (req, res) => {
     });
 
     await nuevoPedido.save();
-    res.status(201).send('Pedido creado correctamente');
+    res.status(201).json({ message: 'Pedido creado correctamente' });
   } catch (err) {
     console.error("Error al crear el pedido:", err);
-    res.status(500).send(`Error al crear el pedido: ${err.message}`);
+    res.status(500).json({ error: `Error al crear el pedido: ${err.message}` });
   }
 });
 
@@ -45,32 +52,38 @@ router.get('/productos', async (req, res) => {
     res.status(200).json(productos);
   } catch (err) {
     console.error('Error al obtener productos:', err);
-    res.status(500).send('Error al obtener productos');
+    res.status(500).json({ error: 'Error al obtener productos' });
   }
 });
 
-// Obtener todos los pedidos con los detalles de los productos
+// Obtener todos los pedidos con los detalles de los productos y clientes
 router.get('/', async (req, res) => {
   try {
-    const pedidos = await Pedido.find().populate('producto'); // Populate para obtener detalles del producto
+    const pedidos = await Pedido.find()
+      .populate('producto')  // Poblar detalles del producto
+      .populate('cliente', 'nombre')  // Poblar solo el campo `nombre` del cliente
+      .exec();
     res.status(200).json(pedidos);
   } catch (err) {
     console.error("Error al obtener los pedidos:", err);
-    res.status(500).send('Error al obtener los pedidos');
+    res.status(500).json({ error: 'Error al obtener los pedidos' });
   }
 });
 
-// Obtener un pedido específico por ID
+// Obtener un pedido específico por ID con los detalles del producto y cliente
 router.get('/:id', async (req, res) => {
   try {
-    const pedido = await Pedido.findById(req.params.id).populate('producto'); // Populate para obtener detalles del producto
+    const pedido = await Pedido.findById(req.params.id)
+      .populate('producto')  // Poblar detalles del producto
+      .populate('cliente', 'nombre')  // Poblar solo el campo `nombre` del cliente
+      .exec();
     if (!pedido) {
       return res.status(404).send('Pedido no encontrado');
     }
     res.status(200).json(pedido);
   } catch (err) {
     console.error("Error al obtener el pedido:", err);
-    res.status(500).send('Error al obtener el pedido');
+    res.status(500).json({ error: 'Error al obtener el pedido' });
   }
 });
 
@@ -108,7 +121,7 @@ router.put('/:id', async (req, res) => {
     res.status(200).json(pedidoActualizado);
   } catch (err) {
     console.error("Error al actualizar el pedido:", err);
-    res.status(500).send('Error al actualizar el pedido');
+    res.status(500).json({ error: 'Error al actualizar el pedido' });
   }
 });
 
@@ -119,10 +132,10 @@ router.delete('/:id', async (req, res) => {
     if (!pedidoEliminado) {
       return res.status(404).send('Pedido no encontrado');
     }
-    res.status(200).send('Pedido eliminado correctamente');
+    res.status(200).json({ message: 'Pedido eliminado correctamente' });
   } catch (err) {
     console.error("Error al eliminar el pedido:", err);
-    res.status(500).send('Error al eliminar el pedido');
+    res.status(500).json({ error: 'Error al eliminar el pedido' });
   }
 });
 

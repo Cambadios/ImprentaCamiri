@@ -35,10 +35,23 @@ function PedidoList() {
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Estás seguro de eliminar este pedido?')) {
-      await deletePedido(id);
-      const data = await getPedidos();
-      setPedidos(data);
-      setPedidosOriginales(data);
+      try {
+        const response = await fetch(`${urlApi}/api/pedidos/${id}`, {
+          method: 'DELETE',  // Usar DELETE para eliminar
+        });
+
+        if (response.ok) {
+          const data = await response.json(); // Respuesta en formato JSON
+          alert(data.message); // Mensaje de éxito
+          const updatedPedidos = await getPedidos();
+          setPedidos(updatedPedidos);
+          setPedidosOriginales(updatedPedidos);
+        } else {
+          alert('❌ Error al eliminar el pedido');
+        }
+      } catch (error) {
+        alert('❌ Error de conexión');
+      }
     }
   };
 
@@ -113,7 +126,7 @@ function PedidoList() {
           {pedidos.map(p => (
             <div key={p._id} style={cardStyle}>
               <h3>{p.producto ? p.producto.nombre : 'Producto no disponible'}</h3>
-              <p><strong>Cliente:</strong> {p.cliente ? p.cliente.nombre : 'Cliente no disponible'}</p>  {/* Aquí mostramos el nombre del cliente */}
+              <p><strong>Cliente:</strong> {p.cliente ? p.cliente.nombre : 'Cliente no disponible'}</p>  {/* Muestra el nombre del cliente */}
               <p><strong>Cantidad:</strong> {p.cantidad}</p>
               <p><strong>Precio Total:</strong> Bs {p.precioTotal}</p>
               <p><strong>Pago Cliente:</strong> Bs {p.pagoCliente}</p>

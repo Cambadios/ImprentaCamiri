@@ -1,51 +1,56 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-// Login y recuperación de contraseña
-import Login from "./login/Login";
-import OlvideContrasena from "./login/OlvideContrasena";
-import RestablecerContrasena from "./login/RestablecerContrasena";
+/* ===== Público ===== */
+import Login from "./login/Login.jsx";
+import OlvideContrasena from "./login/OlvideContrasena.jsx";
+import RestablecerContrasena from "./login/RestablecerContrasena.jsx";
 
-// Paneles principales
-import Principal from "./principal/Principal";
-import Admin from "./admin/Admin";
-import DashboardNuevo from "./dashboard/DashboardNuevo";
+/* ===== Paneles principales (clásicos) ===== */
+import Admin from "./admin/Admin.jsx";
 
-// Clientes
-import ClienteForm from "./clientes/ClienteForm";
-import ClienteList from "./clientes/ClienteList";
+/* ===== Layouts (clásicos) ===== */
+import Layout from "./components/Layout.jsx";                   // Sidebar completa (beige - admin)
+import LayoutPrincipal from "./components/LayoutPrincipal.jsx"; // Sidebar mini (azul - principal)
 
-// Inventario
-import InventarioForm from "./inventario/InventarioForm";
-import InventarioList from "./inventario/InventarioList";
+/* ===== VISTAS EN PESTAÑAS ===== */
+import AdminTabs from "./pestanas/admin/AdminTabs.jsx";
+import UsuarioTabs from "./pestanas/usuario/UsuarioTabs.jsx";
 
-// Productos
-import ProductoForm from "./producto/ProductoForm";
-import ProductoList from "./producto/ProductoList";
+/* ===== COMPONENTES (según tu nueva estructura) ===== */
+/* Admin: clientes */
+import ClienteListAdmin from "./pestanas/admin/clientes/list.jsx";
+import ClienteFormAdmin from "./pestanas/admin/clientes/form.jsx";
+/* Admin: productos */
+import ProductoListAdmin from "./pestanas/admin/productos/list.jsx";
+import ProductoFormAdmin from "./pestanas/admin/productos/form.jsx";
+/* Admin: inventario */
+import InventarioListAdmin from "./pestanas/admin/inventario/list.jsx";
+import InventarioFormAdmin from "./pestanas/admin/inventario/form.jsx";
+/* Admin: pedidos */
+import PedidoListAdmin from "./pestanas/admin/pedidos/list.jsx";
+import PedidoFormAdmin from "./pestanas/admin/pedidos/form.jsx";
+/* Admin: usuarios */
+import UsuarioListAdmin from "./pestanas/admin/usuarios/list.jsx";
+import UsuarioFormAdmin from "./pestanas/admin/usuarios/form.jsx";
+/* Admin: reportes */
+import ReporteAdmin from "./pestanas/admin/reportes/index.jsx";
+/* Admin: dashboard */
+import DashboardAdmin from "./pestanas/admin/dashboard/index.jsx";
 
-// Pedidos
-import PedidoForm from "./pedidos/PedidoForm";
-import PedidoList from "./pedidos/PedidoList";
+/* Usuario (principal/azul) */
+import ClienteListUsuario from "./pestanas/usuario/clientes/list.jsx";
+import ClienteFormUsuario from "./pestanas/usuario/clientes/form.jsx";
+import PedidoListUsuario from "./pestanas/usuario/pedidos/list.jsx";
+import PedidoFormUsuario from "./pestanas/usuario/pedidos/form.jsx";
+import DashboardUsuario from "./pestanas/usuario/DashboardUsuario.jsx";
 
-// Usuarios
-import UsuarioForm from "./usuarios/UsuarioForm";
-import UsuarioList from "./usuarios/UsuarioList";
-
-// Reportes
-import ReportePDF from "./reportes/ReportePDF";
-
-// Layout que incluye la barra lateral
-import Layout from './components/Layout';  // Componente de Layout con Sidebar
-
-// ===== Guard de rutas (en el mismo archivo) =====
+/* ===== Guard de rutas ===== */
 function PrivateRoute({ children, roles = [] }) {
   const role = localStorage.getItem("role");
   if (!role) return <Navigate to="/login" replace />;
 
-  if (
-    roles.length &&
-    !roles.map((r) => r.toLowerCase()).includes(role.toLowerCase())
-  ) {
+  if (roles.length && !roles.map((r) => r.toLowerCase()).includes(role.toLowerCase())) {
     return <Navigate to="/login" replace />;
   }
   return children;
@@ -54,55 +59,100 @@ function PrivateRoute({ children, roles = [] }) {
 function App() {
   return (
     <Routes>
-      {/* Auth */}
+      {/* ===== Público ===== */}
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/olvide-contrasena" element={<OlvideContrasena />} />
-      <Route
-        path="/restablecer-contrasena/:token"
-        element={<RestablecerContrasena />}
-      />
+      <Route path="/restablecer-contrasena/:token" element={<RestablecerContrasena />} />
 
-      {/* Paneles protegidos */}
+      {/* ===================== */}
+      {/*   VISTAS EN PESTAÑAS  */}
+      {/* ===================== */}
+
+      {/* Admin en pestañas (sin Layout; header propio) */}
       <Route
-        path="/"
+        path="/pestanas/admin"
         element={
           <PrivateRoute roles={["admin", "administrador"]}>
-            <Layout /> {/* Usamos Layout para mostrar la barra lateral */}
+            <AdminTabs />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Usuario en pestañas (sin Layout; header propio) */}
+      <Route
+        path="/pestanas/usuario"
+        element={
+          <PrivateRoute roles={["usuario"]}>
+            <UsuarioTabs />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ================================== */}
+      {/*   MODO CLÁSICO CON TUS LAYOUTS     */}
+      {/* ================================== */}
+
+      {/* Principal (AZUL). Si quieres solo para "usuario", usa roles={["usuario"]} */}
+      <Route
+        element={
+          <PrivateRoute>
+            <LayoutPrincipal />
           </PrivateRoute>
         }
       >
-        <Route path="admin" element={<Admin />} />
-        <Route path="principal" element={<Principal />} />
-        <Route path="dashboard" element={<DashboardNuevo />} />
+        {/* Dashboard usuario (opcional) */}
+        <Route path="/principal" element={<DashboardUsuario />} />
 
-        {/* Clientes */}
-        <Route path="clientes" element={<ClienteList />} />
-        <Route path="clientes/agregar" element={<ClienteForm />} />
-        <Route path="clientes/editar/:id" element={<ClienteForm />} />
+        {/* Clientes (usuario) */}
+        <Route path="/clientes" element={<ClienteListUsuario />} />
+        <Route path="/clientes/agregar" element={<ClienteFormUsuario />} />
+        <Route path="/clientes/editar/:id" element={<ClienteFormUsuario />} />
 
-        {/* Inventario */}
-        <Route path="inventario" element={<InventarioList />} />
-        <Route path="inventario/editar/:id" element={<InventarioForm />} />
-        <Route path="inventario/agregar" element={<InventarioForm />} />
+        {/* Pedidos (usuario) */}
+        <Route path="/pedidos" element={<PedidoListUsuario />} />
+        <Route path="/pedidos/agregar" element={<PedidoFormUsuario />} />
+        <Route path="/pedidos/editar/:id" element={<PedidoFormUsuario />} />
+      </Route>
 
-        {/* Productos */}
-        <Route path="productos" element={<ProductoList />} />
-        <Route path="productos/agregar" element={<ProductoForm />} />
-        <Route path="productos/editar/:id" element={<ProductoForm />} />
+      {/* Admin (BEIGE) – requiere rol admin/administrador */}
+      <Route
+        element={
+          <PrivateRoute roles={["admin", "administrador"]}>
+            <Layout />
+          </PrivateRoute>
+        }
+      >
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/dashboard" element={<DashboardAdmin />} />
 
-        {/* Pedidos */}
-        <Route path="pedidos" element={<PedidoList />} />
-        <Route path="pedidos/agregar" element={<PedidoForm />} />
-        <Route path="pedidos/editar/:id" element={<PedidoForm />} />
+        {/* Admin: PEDIDOS */}
+        <Route path="/admin/pedidos" element={<PedidoListAdmin />} />
+        <Route path="/admin/pedidos/agregar" element={<PedidoFormAdmin />} />
+        <Route path="/admin/pedidos/editar/:id" element={<PedidoFormAdmin />} />
 
-        {/* Usuarios */}
-        <Route path="usuarios" element={<UsuarioList />} />
-        <Route path="usuarios/agregar" element={<UsuarioForm />} />
-        <Route path="usuarios/editar/:id" element={<UsuarioForm />} />
+        {/* Admin: INVENTARIO */}
+        <Route path="/admin/inventario" element={<InventarioListAdmin />} />
+        <Route path="/admin/inventario/agregar" element={<InventarioFormAdmin />} />
+        <Route path="/admin/inventario/editar/:id" element={<InventarioFormAdmin />} />
 
-        {/* Reportes */}
-        <Route path="reportes" element={<ReportePDF />} />
+        {/* Admin: CLIENTES */}
+        <Route path="/admin/clientes" element={<ClienteListAdmin />} />
+        <Route path="/admin/clientes/agregar" element={<ClienteFormAdmin />} />
+        <Route path="/admin/clientes/editar/:id" element={<ClienteFormAdmin />} />
+
+        {/* Admin: PRODUCTOS */}
+        <Route path="/admin/productos" element={<ProductoListAdmin />} />
+        <Route path="/admin/productos/agregar" element={<ProductoFormAdmin />} />
+        <Route path="/admin/productos/editar/:id" element={<ProductoFormAdmin />} />
+
+        {/* Admin: USUARIOS */}
+        <Route path="/admin/usuarios" element={<UsuarioListAdmin />} />
+        <Route path="/admin/usuarios/agregar" element={<UsuarioFormAdmin />} />
+        <Route path="/admin/usuarios/editar/:id" element={<UsuarioFormAdmin />} />
+
+        {/* Admin: REPORTES */}
+        <Route path="/admin/reportes" element={<ReporteAdmin />} />
       </Route>
 
       {/* 404 */}

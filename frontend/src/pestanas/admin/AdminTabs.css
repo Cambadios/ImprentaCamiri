@@ -1,0 +1,109 @@
+/* src/pestanas/AdminTabs.css */
+
+/* Layout base */
+.at-wrap {
+  --bg: #f7f2e9;
+  --panel: #fff;
+  --text: #2e2a22;
+  --muted: #80756a;
+  --brand: #d6c295;
+  --brand-strong: #bda06b;
+  --accent: #2f6f8f;
+  --danger: #b14136;
+
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Header */
+.at-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  background: linear-gradient(180deg, #efe3cc, #e6d7b8);
+  border-bottom: 1px solid #e0d2b6;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.at-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.at-brand-logo {
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+.at-brand-sub {
+  font-size: .95rem;
+  color: var(--muted);
+}
+
+.at-actions {
+  display: flex;
+  gap: 10px;
+}
+.at-btn {
+  all: unset;
+  background: #f5efe4;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #e5dccd;
+}
+.at-btn:hover { background: #efe7d8; }
+.at-btn-danger {
+  background: #f5e6e4;
+  color: var(--danger);
+  border-color: #ebd3cf;
+}
+.at-btn-danger:hover { background: #f1deda; }
+
+/* Tabs */
+.at-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  position: sticky;
+  top: 68px; /* debajo del header */
+  background: #f2ead9cc;
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid #e6dcc6;
+  z-index: 9;
+}
+.at-tab {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #f6efe2;
+  border: 1px solid #eadfc7;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text);
+}
+.at-tab:hover { filter: brightness(.97); }
+.at-tab.active {
+  background: #e9dcc0;
+  border-color: #dccaa3;
+}
+
+/* Contenido */
+.at-content {
+  padding: 16px;
+}
+.at-panel {
+  background: var(--panel);
+  border: 1px solid #eadfc7;
+  border-radius: 14px;
+  padding: 18px;
+}
+.at-title { margin: 0 0 6px 0; }
+.at-muted { color: var(--muted); }

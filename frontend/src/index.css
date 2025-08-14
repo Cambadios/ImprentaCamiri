@@ -1,72 +1,57 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ===== Reset sensible ===== */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; background: #f7f2e9; color: #2e2a22; }
 
-/* ===== Base responsive y safe areas (iPhone) ===== */
-@layer base {
-  html, body, #root { height: 100%; }
+/* Evita que algún CSS global (como AdminTabs.css) anule inputs/botones */
+input, button, select, textarea { all: revert; font: inherit; color: inherit; }
 
-  /* Respetar las áreas seguras en iOS */
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-    @apply bg-stone-50 text-stone-800 antialiased;
-  }
-
-  /* Tipografía fluida base (ajustable con Tailwind en componentes) */
-  h1 { @apply text-2xl sm:text-3xl lg:text-4xl font-bold; }
-  h2 { @apply text-xl sm:text-2xl lg:text-3xl font-semibold; }
-  h3 { @apply text-lg sm:text-xl font-semibold; }
-  p  { @apply text-sm sm:text-base; }
+/* ===== Login ===== */
+.login-wrap {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
 }
-
-/* ===== Tablas responsivas ===== */
-/* Evita estilos globales agresivos en th/td; usa una clase .table */
-.table {
-  @apply w-full border border-stone-300 rounded-xl overflow-hidden bg-white;
-  border-collapse: collapse; /* Mantener colapso */
+.login-card {
+  width: min(420px, 92vw);
+  background: #fff;
+  border: 1px solid #eadfc7;
+  border-radius: 16px;
+  padding: 20px 18px;
+  box-shadow: 0 10px 28px #00000014;
 }
-
-.table th,
-.table td {
-  /* Alineación consistente */
-  text-align: center;
-  vertical-align: top;
-
-  /* Borde y espaciado */
-  border: 1px solid #7c7057;
-  padding: 0.5rem; /* 8px */
+.login-title {
+  margin: 0 0 10px 0;
+  font-weight: 800;
+  letter-spacing: .2px;
 }
-
-/* Encabezado con contraste */
-.table thead th {
-  @apply bg-stone-100 font-semibold;
+.login-sub {
+  margin: 0 0 16px 0;
+  color: #80756a;
+  font-size: .95rem;
 }
-
-/* Fila zebra opcional */
-.table tbody tr:nth-child(even) {
-  @apply bg-stone-50;
+.login-form label { display: block; margin: 10px 0 6px; font-weight: 600; }
+.login-form input {
+  width: 100%;
+  padding: 12px 12px;
+  border: 1px solid #e5dccd;
+  border-radius: 10px;
+  background: #fff;
 }
-
-/* En móviles, permite scroll horizontal sin romper layout */
-.table-wrapper {
-  @apply w-full overflow-x-auto rounded-xl border border-stone-200;
+.login-actions {
+  display: flex; gap: 10px; margin-top: 16px; align-items: center;
 }
-
-/* ===== Accesibilidad y detalles de UX ===== */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
+.btn {
+  display: inline-block;
+  border: 1px solid #e5dccd;
+  background: #f6efe2;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
 }
-
-/* Scrollbar sutil (soporte WebKit) */
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-track { background: #eee; }
-*::-webkit-scrollbar-thumb { background: #c7c0b3; border-radius: 8px; }
-*::-webkit-scrollbar-thumb:hover { background: #b2a896; }
+.btn:hover { filter: brightness(.98); }
+.link {
+  background: none; border: none; color: #2f6f8f; text-decoration: underline; cursor: pointer; padding: 0; font-weight: 600;
+}

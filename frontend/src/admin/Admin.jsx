@@ -106,11 +106,11 @@ function Admin() {
 
         {/* Navegación */}
         <NavButton onClick={() => navigate("/dashboard")} icon="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png" label="DASHBOARD" />
-        <NavButton to="/clientes" icon="https://cdn-icons-png.flaticon.com/512/686/686348.png" label="CLIENTE" />
-        <NavButton to="/pedidos" icon="https://cdn-icons-png.flaticon.com/512/6384/6384868.png" label="PEDIDO" />
-        <NavButton to="/inventario" icon="https://cdn-icons-png.flaticon.com/512/2897/2897785.png" label="INVENTARIO" />
-        <NavButton to="/productos" icon="https://cdn-icons-png.flaticon.com/512/2991/2991123.png" label="PRODUCTOS" />
-        <NavButton to="/usuarios" icon="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" label="USUARIOS" />
+        <NavButton to="/admin/clientes" icon="https://cdn-icons-png.flaticon.com/512/686/686348.png" label="CLIENTE" />
+        <NavButton to="/admin/pedidos" icon="https://cdn-icons-png.flaticon.com/512/6384/6384868.png" label="PEDIDO" />
+        <NavButton to="/admin/inventario" icon="https://cdn-icons-png.flaticon.com/512/2897/2897785.png" label="INVENTARIO" />
+        <NavButton to="/admin/productos" icon="https://cdn-icons-png.flaticon.com/512/2991/2991123.png" label="PRODUCTOS" />
+        <NavButton to="/admin/usuarios" icon="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" label="USUARIOS" />
         <NavButton onClick={() => navigate("/reportes")} icon="https://cdn-icons-png.flaticon.com/512/5674/5674015.png" label="REPORTES" />
 
         {/* Usuario + cuenta */}
@@ -157,11 +157,11 @@ function Admin() {
       {/* Accesos centrales */}
       <div className="admin-buttons">
         <NavButton onClick={() => navigate("/dashboard")} icon="https://png.pngtree.com/png-clipart/20230328/original/pngtree-dashboard-silhouette-icon-transparent-background-png-image_9007538.png" label="DASHBOARD" />
-        <NavButton to="/clientes" icon="https://cdn-icons-png.flaticon.com/512/686/686348.png" label="CLIENTE" />
-        <NavButton to="/pedidos" icon="https://cdn-icons-png.flaticon.com/512/6384/6384868.png" label="PEDIDO" />
-        <NavButton to="/inventario" icon="https://cdn-icons-png.flaticon.com/512/2897/2897785.png" label="INVENTARIO" />
-        <NavButton to="/productos" icon="https://cdn-icons-png.flaticon.com/512/2991/2991123.png" label="PRODUCTOS" />
-        <NavButton to="/usuarios" icon="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" label="USUARIOS" />
+        <NavButton to="/admin/clientes" icon="https://cdn-icons-png.flaticon.com/512/686/686348.png" label="CLIENTE" />
+        <NavButton to="/admin/pedidos" icon="https://cdn-icons-png.flaticon.com/512/6384/6384868.png" label="PEDIDO" />
+        <NavButton to="/admin/inventario" icon="https://cdn-icons-png.flaticon.com/512/2897/2897785.png" label="INVENTARIO" />
+        <NavButton to="/admin/productos" icon="https://cdn-icons-png.flaticon.com/512/2991/2991123.png" label="PRODUCTOS" />
+        <NavButton to="/admin/usuarios" icon="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" label="USUARIOS" />
         <NavButton onClick={() => navigate("/reportes")} icon="https://cdn-icons-png.flaticon.com/512/5674/5674015.png" label="REPORTES" />
       </div>
 

@@ -1,0 +1,27 @@
+// src/routes/index.js
+const express = require('express');
+
+const authRoutes = require('./authRoutes');
+const usuarioRoutes = require('./usuarioRoutes');
+const clienteRoutes = require('./clienteRoutes');
+const pedidoRoutes = require('./pedidoRoutes');
+const inventarioRoutes = require('./inventarioRoutes');
+const productoRoutes = require('./productoRoutes');
+const reporteRoutes = require('./reporteRoutes');
+
+const router = express.Router();
+
+// Si authRoutes ya define '/usuarios/login' dentro, lo montas sin prefijo extra:
+router.use(authRoutes);
+
+// Rutas con prefijo claro
+router.use('/usuarios', usuarioRoutes);
+router.use('/clientes', clienteRoutes);
+router.use('/pedidos', pedidoRoutes);
+router.use('/inventario', inventarioRoutes);
+router.use('/productos', productoRoutes);
+
+// Reportes (si adentro define '/reporte-pdf')
+router.use(reporteRoutes);
+
+module.exports = router;

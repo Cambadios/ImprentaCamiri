@@ -1,6 +1,6 @@
 const express = require('express');
 const { reportePdf, reporteDatos } = require('../controllers/reporteController');
-const { auth } = require('../middlewares/auth');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 

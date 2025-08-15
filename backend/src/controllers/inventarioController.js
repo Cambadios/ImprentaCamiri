@@ -5,25 +5,36 @@ exports.createProducto = async (req, res) => {
   try {
     const {
       nombre,
-      cantidad,
       descripcion,
-      esPorDocena,
-      numDocenas,
+      categoria,
+      cantidadDisponible,
+      unidadDeMedida,
+      precioUnitario,
       fechaIngreso
     } = req.body;
 
+    // Agregar log para verificar los datos recibidos
+    console.log(req.body);
+
+    // Verifica que todos los campos estén presentes
+    if (!nombre || !descripcion || !categoria || cantidadDisponible == null || !unidadDeMedida || precioUnitario == null) {
+      return res.status(400).json({ message: 'Todos los campos son requeridos' });
+    }
+
     const inventario = new Inventario({
       nombre,
-      cantidad,
       descripcion,
-      esPorDocena: esPorDocena || false,
-      numDocenas: esPorDocena ? numDocenas || 0 : 0,
+      categoria,
+      cantidadDisponible,
+      unidadDeMedida,
+      precioUnitario,
       fechaIngreso: fechaIngreso || Date.now()
     });
 
     await inventario.save();
     res.status(201).json(inventario);
   } catch (error) {
+    console.error("Error al crear producto:", error.message);
     res.status(500).json({ message: error.message });
   }
 };
@@ -44,10 +55,11 @@ exports.updateProducto = async (req, res) => {
     const { id } = req.params;
     const {
       nombre,
-      cantidad,
       descripcion,
-      esPorDocena,
-      numDocenas,
+      categoria,
+      cantidadDisponible,
+      unidadDeMedida,
+      precioUnitario,
       fechaIngreso
     } = req.body;
 
@@ -55,10 +67,11 @@ exports.updateProducto = async (req, res) => {
       id,
       {
         nombre,
-        cantidad,
         descripcion,
-        esPorDocena: esPorDocena || false,
-        numDocenas: esPorDocena ? numDocenas || 0 : 0,
+        categoria,
+        cantidadDisponible,
+        unidadDeMedida,
+        precioUnitario,
         fechaIngreso
       },
       { new: true, runValidators: true }

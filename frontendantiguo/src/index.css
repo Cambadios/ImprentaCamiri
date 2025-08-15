@@ -1,0 +1,57 @@
+/* ===== Reset sensible ===== */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; background: #f7f2e9; color: #2e2a22; }
+
+/* Evita que algún CSS global (como AdminTabs.css) anule inputs/botones */
+input, button, select, textarea { all: revert; font: inherit; color: inherit; }
+
+/* ===== Login ===== */
+.login-wrap {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.login-card {
+  width: min(420px, 92vw);
+  background: #fff;
+  border: 1px solid #eadfc7;
+  border-radius: 16px;
+  padding: 20px 18px;
+  box-shadow: 0 10px 28px #00000014;
+}
+.login-title {
+  margin: 0 0 10px 0;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.login-sub {
+  margin: 0 0 16px 0;
+  color: #80756a;
+  font-size: .95rem;
+}
+.login-form label { display: block; margin: 10px 0 6px; font-weight: 600; }
+.login-form input {
+  width: 100%;
+  padding: 12px 12px;
+  border: 1px solid #e5dccd;
+  border-radius: 10px;
+  background: #fff;
+}
+.login-actions {
+  display: flex; gap: 10px; margin-top: 16px; align-items: center;
+}
+.btn {
+  display: inline-block;
+  border: 1px solid #e5dccd;
+  background: #f6efe2;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(.98); }
+.link {
+  background: none; border: none; color: #2f6f8f; text-decoration: underline; cursor: pointer; padding: 0; font-weight: 600;
+}

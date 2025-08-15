@@ -4,19 +4,23 @@ const Usuario = require('../models/usuario');  // Asegúrate de tener el modelo 
 // Función para iniciar sesión
 const login = async (req, res) => {
   const { correo, contrasena } = req.body;
-  console.log("Correo:", correo, "Contraseña:", contrasena);  // Asegúrate de que estos valores no sean undefined
+
+  console.log("Correo recibido:", correo);
+  console.log("Contraseña recibida:", contrasena);
+
+  if (!correo || !contrasena) {
+    return res.status(400).json({ mensaje: 'Correo y contraseña son requeridos' });
+  }
 
   try {
-    const usuario = await Usuario.findOne({ correo });
-
+    const usuario = await Usuario.findOne({ correo }).select('+contrasena');  // Incluye la contraseña
     if (!usuario) {
       return res.status(400).json({ mensaje: 'Correo no encontrado' });
     }
 
-    // Verifica si la contraseña es válida
-    const esValida = await usuario.compararContrasena(contrasena);
-    console.log("Contraseña válida:", esValida);  // Verifica si la comparación fue exitosa
+    console.log("Contraseña almacenada en la base de datos:", usuario.contrasena);  // Verifica la contraseña almacenada
 
+    const esValida = await usuario.compararContrasena(contrasena);
     if (!esValida) {
       return res.status(400).json({ mensaje: 'Contraseña incorrecta' });
     }
@@ -44,16 +48,14 @@ const register = async (req, res) => {
 
   try {
     // Verificar si el correo ya está registrado
-    const usuarioExistente = await Usuario.findOne({ correo });
-    if (usuarioExistente) {
-      return res.status(400).json({ mensaje: 'Correo ya registrado' });
-    }
+    const existe = await Usuario.findOne({ correo });
+    if (existe) return res.status(400).json({ mensaje: 'El correo ya está registrado' });
 
     // Crear un nuevo usuario
     const nuevoUsuario = new Usuario({
       nombreCompleto,
       correo,
-      contrasena,  // La contraseña será en texto claro, se hasheará automáticamente al guardarlo
+      contrasena,
       telefono,
       carnetIdentidad,
       rol
@@ -62,20 +64,14 @@ const register = async (req, res) => {
     // Guardar el nuevo usuario en la base de datos
     await nuevoUsuario.save();
 
-    // Responder con el nuevo usuario (sin la contraseña)
-    return res.status(201).json({
-      mensaje: 'Usuario registrado exitosamente',
-      usuario: {
-        _id: nuevoUsuario._id,
-        nombreCompleto: nuevoUsuario.nombreCompleto,
-        correo: nuevoUsuario.correo,
-        rol: nuevoUsuario.rol
-      }
-    });
+    // Evitar devolver la contraseña
+    const { contrasena: _, ...safeUser } = nuevoUsuario.toObject();
+    res.status(201).json({ mensaje: 'Usuario creado correctamente', usuario: safeUser });
   } catch (error) {
-    console.error('Error al registrar usuario:', error);
-    return res.status(500).json({ mensaje: 'Error interno del servidor', error: error.message });
+    console.error('Error al crear usuario:', error);
+    res.status(500).json({ mensaje: error.message });
   }
 };
 
+// Exporta ambas funciones para que puedan ser usadas en `app.js`
 module.exports = { login, register };

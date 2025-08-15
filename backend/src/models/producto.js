@@ -1,34 +1,15 @@
 const mongoose = require('mongoose');
 
 const productoSchema = new mongoose.Schema({
-  nombre: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  descripcion: {
-    type: String,
-    trim: true,
-    default: '', // Mejor que sea opcional con default vacío
-  },
-  precioUnitario: {
-    type: Number,
-    required: true,
-    min: 0,
-  },
-  categoria: {
-    type: String,
-    enum: ['banner', 'poster', 'agenda', 'tarjeta'],
-    required: true,
-  },
+  nombre: { type: String, required: true, trim: true },
+  descripcion: { type: String, required: true, trim: true },
+  precioUnitario: { type: Number, required: true, min: 0 },
   materiales: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Inventario', // Referencia a la colección de inventario
+    material: { type: mongoose.Schema.Types.ObjectId, ref: 'Inventario', required: true },
+    cantidadPorUnidad: { type: Number, required: true, min: 1 },
   }],
-  creadoEn: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  fechaCreacion: { type: Date, default: Date.now }
+}, { timestamps: true });
+
 
 module.exports = mongoose.model('Producto', productoSchema);

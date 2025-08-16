@@ -11,36 +11,21 @@ exports.createProducto = async (req, res) => {
       return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
 
-    // Verificar existencia de materiales y actualizarlos en inventario
-    for (let i = 0; i < materiales.length; i++) {
-      const material = await Inventario.findById(materiales[i].material);
-      if (!material) {
-        return res.status(404).json({ message: `Material ${materiales[i].material} no encontrado en inventario` });
-      }
-      
-      if (material.cantidadDisponible < materiales[i].cantidadPorUnidad) {
-        return res.status(400).json({ message: `No hay suficiente cantidad de ${material.nombre} en inventario` });
-      }
-
-      // Actualizar inventario: descontar materiales utilizados
-      material.cantidadDisponible -= materiales[i].cantidadPorUnidad;
-      await material.save();
-    }
-
     // Crear el nuevo producto
     const nuevoProducto = new Producto({
       nombre,
       descripcion,
       precioUnitario,
-      materiales,
+      materiales,  // No se actualiza el inventario aquí
     });
 
-    // Guardar el producto
+    // Guardamos el producto en la base de datos
     await nuevoProducto.save();
     res.status(201).json(nuevoProducto);
   } catch (error) {
+    // Log detallado del error
     console.error("Error al crear producto:", error.message);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Hubo un error al crear el producto", error: error.message });
   }
 };
 

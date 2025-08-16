@@ -11,5 +11,4 @@ const productoSchema = new mongoose.Schema({
   fechaCreacion: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-
 module.exports = mongoose.model('Producto', productoSchema);

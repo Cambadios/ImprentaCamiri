@@ -105,4 +105,14 @@ router.delete('/:id', auth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Buscar por teléfono
+router.get('/buscar-por-telefono/:telefono', auth, async (req, res, next) => {
+  try {
+    const { telefono } = req.params;
+    const cliente = await Cliente.findOne({ telefono }).lean();
+    if (!cliente) return res.status(404).json({ message: 'Cliente no encontrado' });
+    res.status(200).json(cliente);  // Devolvemos el cliente completo
+  } catch (e) { next(e); }
+});
+
 module.exports = router;

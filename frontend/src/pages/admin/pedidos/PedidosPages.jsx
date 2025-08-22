@@ -1,68 +1,100 @@
-import React, { useState, useEffect } from "react";
+// src/components/PedidoPage.jsx
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import PedidoList from "./PedidosList";
 import PedidoForm from "./PedidosForm";
+import { Toast } from "primereact/toast";
+import { Button } from "primereact/button";
+import { InputText } from "primereact/inputtext";
 import { apiFetch } from "../../../api/http";
+
+const normalizeDigits = (v) => (v ? String(v).replace(/\D+/g, "") : "");
+const safeStr = (v) => (v == null ? "" : String(v));
 
 const PedidoPage = () => {
   const [pedidos, setPedidos] = useState([]);
-  const [clientes, setClientes] = useState([]); // Estado para almacenar los clientes
-  const [productos, setProductos] = useState([]); // Estado para almacenar los productos
+  const [clientes, setClientes] = useState([]);
+  const [productos, setProductos] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [pedidoEdit, setPedidoEdit] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const toast = useRef(null);
 
-  // Obtener lista de pedidos
+  // ---- helpers ----
+  const parseResponse = async (resp) => {
+    let data = null;
+    let text = "";
+    try {
+      text = await resp.text();
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text ? { message: text } : null;
+    }
+    return { ok: resp.ok, status: resp.status, data };
+  };
+
+  // Pedidos
   useEffect(() => {
     const fetchPedidos = async () => {
       setLoading(true);
       try {
-        const response = await apiFetch("/pedidos");
-        const data = await response.json();
-        console.log(data); // Verifica que data sea un array
-        setPedidos(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Error al obtener pedidos", error);
+        const resp = await apiFetch("/pedidos");
+        const json = await resp.json();
+        setPedidos(Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : []);
+      } catch (e) {
+        console.error("Error al obtener pedidos", e);
+        setPedidos([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchPedidos();
   }, []);
 
-  // Obtener lista de clientes
+  // Clientes
   useEffect(() => {
     const fetchClientes = async () => {
       try {
-        const response = await apiFetch("/clientes");
-        const data = await response.json();
-        console.log("Clientes obtenidos: ", data.data);
-        setClientes(Array.isArray(data.data) ? data.data : []);
-      } catch (error) {
-        console.error("Error al obtener clientes", error);
+        const resp = await apiFetch("/clientes");
+        const json = await resp.json();
+        const arr = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
+        setClientes(arr);
+      } catch (e) {
+        console.error("Error al obtener clientes", e);
         setClientes([]);
       }
     };
-
     fetchClientes();
-  }, []); // Solo se ejecuta una vez al cargar la página
+  }, []);
 
-  // Obtener lista de productos
+  // Productos
   useEffect(() => {
     const fetchProductos = async () => {
       try {
-        const response = await apiFetch("/productos");
-        const data = await response.json();
-        console.log("Productos obtenidos: ", data); // Verifica que productos están llegando
-        setProductos(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Error al obtener productos", error);
+        const resp = await apiFetch("/productos"); // o /inventario según tu back
+        const json = await resp.json();
+        setProductos(Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : []);
+      } catch (e) {
+        console.error("Error al obtener productos", e);
         setProductos([]);
       }
     };
-
     fetchProductos();
   }, []);
+
+  // Filtro por nombre completo o teléfono
+  const filteredPedidos = useMemo(() => {
+    const term = safeStr(searchTerm).toLowerCase().trim();
+    const termDigits = normalizeDigits(term);
+    if (!term) return pedidos;
+    return (pedidos ?? []).filter((p) => {
+      const nom = safeStr(p?.cliente?.nombre).toLowerCase();
+      const ape = safeStr(p?.cliente?.apellido).toLowerCase();
+      const full = `${nom} ${ape}`.trim();
+      const tel = normalizeDigits(safeStr(p?.cliente?.telefono));
+      return full.includes(term) || (termDigits && tel.includes(termDigits));
+    });
+  }, [pedidos, searchTerm]);
 
   const handleEdit = (pedido) => {
     setPedidoEdit(pedido);
@@ -70,41 +102,82 @@ const PedidoPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este pedido?")) {
-      try {
-        await apiFetch(`/pedidos/${id}`, { method: "DELETE" });
-        setPedidos((prevPedidos) =>
-          prevPedidos.filter((pedido) => pedido._id !== id)
-        );
-      } catch (error) {
-        console.error("Error al eliminar pedido", error);
-      }
+    // Mantengo confirmación nativa para no alterar tu UX
+    if (!window.confirm("¿Eliminar este pedido?")) return;
+    try {
+      await apiFetch(`/pedidos/${id}`, { method: "DELETE" });
+      setPedidos((prev) => prev.filter((p) => p._id !== id));
+      toast.current?.show({ severity: "success", summary: "Pedido eliminado", life: 2200 });
+    } catch (e) {
+      console.error("Error al eliminar pedido", e);
+      toast.current?.show({
+        severity: "error",
+        summary: "No se pudo eliminar",
+        detail: e?.message || "Error desconocido",
+        life: 5000,
+      });
     }
   };
 
-  const handleSave = async (pedido) => {
+  const handleSave = async (payload) => {
     try {
       setLoading(true);
+
       if (pedidoEdit) {
-        const response = await apiFetch(`/pedidos/${pedidoEdit._id}`, {
-          method: "PUT",
-          body: JSON.stringify(pedido),
+        // EDITAR (estado / fechaEntrega)
+        const resp = await apiFetch(`/pedidos/${pedidoEdit._id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            estado: payload.estado || pedidoEdit.estado,
+            fechaEntrega: payload.fechaEntrega || pedidoEdit.fechaEntrega,
+          }),
         });
-        const updatedPedido = await response.json();
-        setPedidos((prev) =>
-          prev.map((p) => (p._id === updatedPedido._id ? updatedPedido : p))
-        );
+        const { ok, data } = await parseResponse(resp);
+
+        if (!ok) {
+          toast.current?.show({
+            severity: "error",
+            summary: "No se pudo actualizar el pedido",
+            detail: data?.message || "Error desconocido",
+            life: 6000,
+          });
+          return;
+        }
+
+        setPedidos((prev) => prev.map((p) => (p._id === data._id ? data : p)));
+        toast.current?.show({ severity: "success", summary: "Pedido actualizado", life: 2500 });
+        setModalVisible(false);
+        setPedidoEdit(null);
       } else {
-        const response = await apiFetch("/pedidos", {
+        // CREAR
+        const resp = await apiFetch("/pedidos", {
           method: "POST",
-          body: JSON.stringify(pedido),
+          body: JSON.stringify(payload),
         });
-        const newPedido = await response.json();
-        setPedidos((prev) => [...prev, newPedido]);
+        const { ok, data } = await parseResponse(resp);
+
+        if (!ok) {
+          toast.current?.show({
+            severity: "error",
+            summary: "No se pudo crear el pedido",
+            detail: data?.error || data?.message || "Error desconocido",
+            life: 6000,
+          });
+          return;
+        }
+
+        setPedidos((prev) => [data, ...prev]);
+        toast.current?.show({ severity: "success", summary: "Pedido creado", life: 2500 });
+        setModalVisible(false);
+        setPedidoEdit(null);
       }
-      setModalVisible(false);
     } catch (error) {
-      console.error("Error al guardar pedido", error);
+      toast.current?.show({
+        severity: "error",
+        summary: "Error de red",
+        detail: error?.message || "No se pudo conectar",
+        life: 5000,
+      });
     } finally {
       setLoading(false);
     }
@@ -117,32 +190,48 @@ const PedidoPage = () => {
 
   return (
     <div className="p-4">
-      <h2>Gestión de Pedidos</h2>
-      <button
-        className="p-button p-button-success"
-        onClick={() => setModalVisible(true)}
-        disabled={loading}
-      >
-        Nuevo Pedido
-      </button>
+      <Toast ref={toast} />
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-3xl font-semibold text-gray-700">Gestión de Pedidos</h2>
+        <Button
+          label="Nuevo Pedido"
+          icon="pi pi-plus"
+          className="p-button-success"
+          onClick={() => setModalVisible(true)}
+          disabled={loading}
+        />
+      </div>
+
+      {/* Barra de búsqueda (nombre completo o teléfono) */}
+      <div className="mb-4">
+        <InputText
+          type="text"
+          placeholder="Buscar por nombre completo o teléfono"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full"
+        />
+      </div>
+
+      {/* Lista */}
       {loading ? (
-        <div className="p-d-flex p-jc-center">
-          <i className="pi pi-spin pi-spinner p-overlay-loading" />
+        <div className="flex justify-center py-10">
+          <i className="pi pi-spin pi-spinner text-2xl" />
         </div>
       ) : (
-        <PedidoList
-          pedidos={pedidos}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        <PedidoList pedidos={filteredPedidos} onEdit={handleEdit} onDelete={handleDelete} />
       )}
+
+      {/* Form */}
       <PedidoForm
         visible={isModalVisible}
         onHide={handleModalHide}
         onSave={handleSave}
         pedidoEdit={pedidoEdit}
         clientes={clientes}
-        productos={productos} // Pasar productos a PedidoForm
+        productos={productos}
       />
     </div>
   );

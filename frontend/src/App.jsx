@@ -10,6 +10,7 @@ import ClientesPages from "./pages/admin/clientes/ClientesPages";
 import InventarioPage from "./pages/admin/inventario/InventarioPages";
 import PedidoPage from "./pages/admin/pedidos/PedidosPages";
 import ProductoPage from "./pages/admin/productos/ProductosPages";
+import UsuariosPage from "./pages/admin/usuarios/UsuariosPages";
 
 export default function App() {
   return (
@@ -27,6 +28,8 @@ export default function App() {
             <Route path="inventario" element={<InventarioPage />} />
             <Route path="pedidos" element={<PedidoPage />} />
             <Route path="productos" element={<ProductoPage />} />
+            <Route path="usuarios" element={<UsuariosPage />} />
+
             {/* Aquí agregarías más rutas para otras vistas de admin */}
           </Route>
         </Route>

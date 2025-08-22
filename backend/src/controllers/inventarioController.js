@@ -1,32 +1,21 @@
+// controllers/inventarioController.js
 const Inventario = require('../models/inventario');
 
-// Crear un nuevo producto en inventario
 exports.createProducto = async (req, res) => {
   try {
     const {
-      nombre,
-      descripcion,
-      categoria,
-      cantidadDisponible,
-      unidadDeMedida,
-      precioUnitario,
-      fechaIngreso
+      nombre, descripcion, categoria,
+      cantidadDisponible, unidadDeMedida,
+      precioUnitario, fechaIngreso
     } = req.body;
 
-    // Agregar log para verificar los datos recibidos
-    console.log(req.body);
-
-    // Verifica que todos los campos estén presentes
     if (!nombre || !descripcion || !categoria || cantidadDisponible == null || !unidadDeMedida || precioUnitario == null) {
       return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
 
     const inventario = new Inventario({
-      nombre,
-      descripcion,
-      categoria,
-      cantidadDisponible,
-      unidadDeMedida,
+      nombre, descripcion, categoria,
+      cantidadDisponible, unidadDeMedida,
       precioUnitario,
       fechaIngreso: fechaIngreso || Date.now()
     });
@@ -39,64 +28,72 @@ exports.createProducto = async (req, res) => {
   }
 };
 
-// Obtener todos los productos en inventario
 exports.getProductos = async (req, res) => {
   try {
-    const productos = await Inventario.find();
+    const { q = '' } = req.query;
+    const where = q
+      ? { $or: [
+          { nombre:      { $regex: q, $options: 'i' } },
+          { categoria:   { $regex: q, $options: 'i' } },
+          { codigo:      { $regex: q, $options: 'i' } },
+          { descripcion: { $regex: q, $options: 'i' } },
+        ] }
+      : {};
+    const productos = await Inventario.find(where).lean();
     res.status(200).json(productos);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Actualizar un producto en inventario
+exports.getProductoById = async (req, res) => {
+  try {
+    const p = await Inventario.findById(req.params.id).lean();
+    if (!p) return res.status(404).json({ message: 'Producto no encontrado' });
+    res.status(200).json(p);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.buscarPorCodigo = async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    const p = await Inventario.findOne({ codigo }).lean();
+    if (!p) return res.status(404).json({ message: 'Producto no encontrado' });
+    res.status(200).json(p);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.updateProducto = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      nombre,
-      descripcion,
-      categoria,
-      cantidadDisponible,
-      unidadDeMedida,
-      precioUnitario,
-      fechaIngreso
+      nombre, descripcion, categoria,
+      cantidadDisponible, unidadDeMedida,
+      precioUnitario, fechaIngreso
     } = req.body;
 
     const producto = await Inventario.findByIdAndUpdate(
       id,
-      {
-        nombre,
-        descripcion,
-        categoria,
-        cantidadDisponible,
-        unidadDeMedida,
-        precioUnitario,
-        fechaIngreso
-      },
+      { nombre, descripcion, categoria, cantidadDisponible, unidadDeMedida, precioUnitario, fechaIngreso },
       { new: true, runValidators: true }
     );
 
-    if (!producto) {
-      return res.status(404).json({ message: 'Producto no encontrado' });
-    }
-
+    if (!producto) return res.status(404).json({ message: 'Producto no encontrado' });
     res.status(200).json(producto);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Eliminar un producto en inventario
 exports.deleteProducto = async (req, res) => {
   try {
     const { id } = req.params;
     const producto = await Inventario.findByIdAndDelete(id);
-
-    if (!producto) {
-      return res.status(404).json({ message: 'Producto no encontrado' });
-    }
-
+    if (!producto) return res.status(404).json({ message: 'Producto no encontrado' });
     res.status(200).json({ message: 'Producto eliminado correctamente' });
   } catch (error) {
     res.status(500).json({ message: error.message });

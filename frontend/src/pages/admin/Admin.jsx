@@ -1,16 +1,19 @@
-import React, { useMemo, useState } from "react";
-import { Outlet, useNavigate, Link } from "react-router-dom"; // Agregamos Link
-import { Button } from "primereact/button"; // PrimeReact Button
+import React, { useMemo } from "react";
+import { Outlet, useNavigate, NavLink } from "react-router-dom";
+import { Button } from "primereact/button";
 
 export default function AdminTabs() {
   const navigate = useNavigate();
-  const [active, setActive] = useState("dashboard");
 
-  // Obtener el nombre del usuario desde localStorage
-  const usuario = JSON.parse(localStorage.getItem('usuario'));
-
-  // Verificar si el usuario existe y si tiene la propiedad nombreCompleto
-  const userName = usuario && usuario.usuario.nombreCompleto ? usuario.usuario.nombreCompleto : "Usuario Anónimo";
+  // Obtener usuario de manera segura
+  let userName = "Usuario Anónimo";
+  try {
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    userName =
+      usuario?.usuario?.nombreCompleto?.trim() ||
+      usuario?.nombreCompleto?.trim() ||
+      userName;
+  } catch (e) {console.log(e)}
 
   const tabs = useMemo(
     () => [
@@ -19,6 +22,7 @@ export default function AdminTabs() {
       { id: "productos", label: "Productos", icon: "🏷️", path: "productos" },
       { id: "inventario", label: "Inventario", icon: "📦", path: "inventario" },
       { id: "pedidos", label: "Pedidos", icon: "🧾", path: "pedidos" },
+      { id: "usuarios", label: "Usuarios", icon: "👤", path: "usuarios" },
       { id: "reportes", label: "Reportes", icon: "🧩", path: "reportes" },
     ],
     []
@@ -30,10 +34,10 @@ export default function AdminTabs() {
     navigate("/login", { replace: true });
   };
 
-  // Restablecer el estado del tab cuando se hace clic en "Ir al Inicio"
   const goHome = () => {
-    setActive(null); // Restablecer tab seleccionado
-    navigate("/admin");
+    // si tu ruta index de /admin redirige a dashboard, puedes ir directo a /admin
+    // o si prefieres explícito:
+    navigate("/admin", { replace: true });
   };
 
   return (
@@ -44,7 +48,6 @@ export default function AdminTabs() {
           <div className="text-sm">Administración</div>
         </div>
         <div className="flex items-center space-x-4">
-          {/* Mostrar nombre de usuario */}
           <div className="text-white font-medium">{userName}</div>
           <Button
             label="Ir al Inicio"
@@ -58,24 +61,29 @@ export default function AdminTabs() {
           />
         </div>
       </header>
+
       <nav className="bg-white shadow-md py-2 flex space-x-4 overflow-x-auto rounded-xl mb-4">
         {tabs.map((t) => (
-          <Link
+          <NavLink
             key={t.id}
-            to={t.path}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ease-in-out ${
-              active === t.id
-                ? "bg-yellow-500 text-white"
-                : "text-gray-700 hover:bg-yellow-200 hover:text-yellow-600"
-            }`}
-            onClick={() => setActive(t.id)}
+            to={t.path}                // ruta relativa dentro de /admin
+            end                         // evita marcar 'dashboard' activo en subrutas
             title={t.label}
+            className={({ isActive }) =>
+              [
+                "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ease-in-out",
+                isActive
+                  ? "bg-yellow-500 text-white"
+                  : "text-gray-700 hover:bg-yellow-200 hover:text-yellow-600",
+              ].join(" ")
+            }
           >
             <span>{t.icon}</span>
             <span>{t.label}</span>
-          </Link>
+          </NavLink>
         ))}
       </nav>
+
       <main className="p-4 bg-white rounded-b-xl shadow-lg">
         <Outlet />
       </main>

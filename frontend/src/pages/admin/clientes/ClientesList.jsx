@@ -5,7 +5,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
 
-const ClientesList = ({ clientes, onEdit, onDelete }) => {
+const ClientesList = ({ clientes = [], onEdit, onDelete }) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState(null);
 
@@ -28,23 +28,22 @@ const ClientesList = ({ clientes, onEdit, onDelete }) => {
 
   return (
     <div className="card">
-      <DataTable value={clientes} paginator rows={5} header="Lista de Clientes">
+      <DataTable value={Array.isArray(clientes) ? clientes : []} paginator rows={5} header="Lista de Clientes" dataKey="_id">
         <Column field="nombre" header="Nombre" />
         <Column field="apellido" header="Apellido" />
         <Column field="telefono" header="Teléfono" />
         <Column field="correo" header="Correo" />
         <Column
+          header="Acciones"
           body={(rowData) => (
             <div className="flex gap-2">
               <Button icon="pi pi-pencil" onClick={() => onEdit(rowData)} />
               <Button icon="pi pi-trash" className="p-button-danger" onClick={() => openDeleteModal(rowData)} />
             </div>
           )}
-          header="Acciones"
         />
       </DataTable>
 
-      {/* Modal de confirmación de eliminación */}
       <Dialog
         visible={isModalVisible}
         style={{ width: '400px' }}

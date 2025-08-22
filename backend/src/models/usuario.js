@@ -8,7 +8,7 @@ const usuarioSchema = new mongoose.Schema(
     contrasena: { type: String, required: true, select: false, minlength: 6 },
     telefono: { type: String, required: true, trim: true, match: [/^[0-9+\-() ]{6,20}$/, 'Teléfono inválido'] },
     carnetIdentidad: { type: String, required: true, trim: true },
-    rol: { type: String, enum: ['admin', 'usuario', 'administrador', 'usuario_normal'], default: 'usuario' },
+    rol: { type: String, enum: ['administrador', 'usuario_normal'], default: 'usuario' },
     resetToken: { type: String, select: false },
     resetTokenExpiry: { type: Date, select: false },
   },

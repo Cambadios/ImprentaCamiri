@@ -1,10 +1,12 @@
+// controllers/pedidoController.js
 const mongoose = require('mongoose');
 const Pedido = require('../models/pedido');
 const Producto = require('../models/producto');
 const Inventario = require('../models/inventario');
 const Cliente = require('../models/cliente');
 
-// Helpers
+const normalizePhone = v => (v ? String(v).replace(/\D+/g, '') : v);
+
 const calcularEstadoPago = (total, pagado) => {
   if (pagado <= 0) return 'Sin pago';
   if (pagado < total) return 'Parcial';
@@ -16,11 +18,22 @@ exports.crearPedido = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { cliente, producto, cantidad, pagoInicial = 0, fechaEntrega } = req.body;
+    let { cliente, clienteTelefono, producto, cantidad, pagoInicial = 0, fechaEntrega } = req.body;
 
-    if (!cliente || !producto || !cantidad) {
+    // Resolver cliente por teléfono si no viene _id
+    if (!cliente && clienteTelefono) {
+      const tel = normalizePhone(clienteTelefono);
+      const cli = await Cliente.findOne({ telefono: tel }).session(session);
+      if (!cli) throw new Error('Cliente no encontrado por teléfono');
+      cliente = cli._id;
+    }
+
+    if (!cliente || !producto || cantidad == null) {
       throw new Error('cliente, producto y cantidad son obligatorios');
     }
+
+    cantidad = Number(cantidad);
+    pagoInicial = Number(pagoInicial || 0);
     if (cantidad <= 0) throw new Error('La cantidad debe ser mayor a 0');
     if (pagoInicial < 0) throw new Error('El pago inicial no puede ser negativo');
 
@@ -32,19 +45,21 @@ exports.crearPedido = async (req, res, next) => {
     if (!cli) throw new Error('Cliente no encontrado');
     if (!prod) throw new Error('Producto no encontrado');
 
-    // Calcular totales
-    const precioUnitarioPedido = prod.precioUnitario;
+    // Calcular totales usando snapshot de precio del producto
+    const precioUnitarioPedido = Number(prod.precioUnitario || 0);
+    if (Number.isNaN(precioUnitarioPedido) || precioUnitarioPedido < 0) {
+      throw new Error('El producto no tiene precioUnitario válido');
+    }
     const total = precioUnitarioPedido * cantidad;
     const pagado = Math.min(pagoInicial, total);
-    const saldo = Math.max(total - pagado, 0);
+    const saldo  = Math.max(total - pagado, 0);
     const estadoPago = calcularEstadoPago(total, pagado);
 
-    // Verificar stock por cada material requerido
-    for (const item of prod.materiales) {
-      const reqPorUnidad = item.cantidadPorUnidad;
+    // Verificar stock de materiales
+    for (const item of (prod.materiales || [])) {
+      const reqPorUnidad = Number(item.cantidadPorUnidad || 0);
       const reqTotal = reqPorUnidad * cantidad;
-
-      const inv = await Inventario.findById(item.material._id).session(session).exec();
+      const inv = await Inventario.findById(item.material?._id || item.material).session(session).exec();
       if (!inv) throw new Error(`Material no encontrado: ${item.material?.nombre || item.material}`);
       if (inv.cantidadDisponible < reqTotal) {
         throw new Error(`Stock insuficiente de "${inv.nombre}". Requerido: ${reqTotal} ${inv.unidadDeMedida}, Disponible: ${inv.cantidadDisponible}`);
@@ -52,9 +67,9 @@ exports.crearPedido = async (req, res, next) => {
     }
 
     // Descontar inventario
-    for (const item of prod.materiales) {
-      const reqTotal = item.cantidadPorUnidad * cantidad;
-      const inv = await Inventario.findById(item.material._id).session(session).exec();
+    for (const item of (prod.materiales || [])) {
+      const reqTotal = Number(item.cantidadPorUnidad || 0) * cantidad;
+      const inv = await Inventario.findById(item.material?._id || item.material).session(session).exec();
       inv.cantidadDisponible -= reqTotal;
       await inv.save({ session });
     }
@@ -82,7 +97,7 @@ exports.crearPedido = async (req, res, next) => {
 
     const populated = await Pedido.findById(pedido[0]._id)
       .populate('cliente', 'nombre apellido telefono')
-      .populate('producto', 'nombre')
+      .populate('producto', 'nombre precioUnitario') // <- incluye precio
       .exec();
 
     res.status(201).json(populated);
@@ -93,7 +108,7 @@ exports.crearPedido = async (req, res, next) => {
   }
 };
 
-// Listar pedidos (con filtros básicos)
+// Listar pedidos
 exports.listarPedidos = async (req, res, next) => {
   try {
     const { q = '', estado, page = 1, limit = 50 } = req.query;
@@ -102,13 +117,11 @@ exports.listarPedidos = async (req, res, next) => {
     const where = {};
     if (estado) where.estado = estado;
     if (q) {
-      // búsqueda por nombre de cliente o producto
-      // hacemos dos subconsultas para obtener ids coincidentes
       const clientes = await Cliente.find({
         $or: [
           { nombre: { $regex: q, $options: 'i' } },
           { apellido: { $regex: q, $options: 'i' } },
-          { telefono: { $regex: q, $options: 'i' } },
+          { telefono: { $regex: q.replace(/\D+/g, ''), $options: 'i' } },
         ]
       }, { _id: 1 }).lean();
 
@@ -117,7 +130,7 @@ exports.listarPedidos = async (req, res, next) => {
       }, { _id: 1 }).lean();
 
       where.$or = [
-        { cliente: { $in: clientes.map(c => c._id) } },
+        { cliente:  { $in: clientes.map(c => c._id) } },
         { producto: { $in: productos.map(p => p._id) } }
       ];
     }
@@ -125,7 +138,7 @@ exports.listarPedidos = async (req, res, next) => {
     const [data, total] = await Promise.all([
       Pedido.find(where)
         .populate('cliente', 'nombre apellido telefono')
-        .populate('producto', 'nombre')
+        .populate('producto', 'nombre precioUnitario') // <- incluye precio
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit))
@@ -141,23 +154,22 @@ exports.listarPedidos = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// Obtener pedido por ID
+// Obtener pedido
 exports.getPedido = async (req, res, next) => {
   try {
     const pedido = await Pedido.findById(req.params.id)
       .populate('cliente', 'nombre apellido telefono correo')
-      .populate('producto', 'nombre descripcion')
+      .populate('producto', 'nombre descripcion precioUnitario') // <- incluye precio
       .lean();
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
     res.status(200).json(pedido);
   } catch (e) { next(e); }
 };
 
-// Actualizar estado / fechaEntrega
+// Actualizar estado/fechaEntrega
 exports.actualizarPedido = async (req, res, next) => {
   try {
     const { estado, fechaEntrega } = req.body;
-
     const cambios = {};
     if (estado) cambios.estado = estado;
     if (fechaEntrega !== undefined) cambios.fechaEntrega = fechaEntrega;
@@ -166,59 +178,62 @@ exports.actualizarPedido = async (req, res, next) => {
       req.params.id,
       cambios,
       { new: true }
-    ).populate('cliente', 'nombre apellido')
-     .populate('producto', 'nombre');
+    )
+    .populate('cliente', 'nombre apellido')
+    .populate('producto', 'nombre precioUnitario');
 
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
     res.status(200).json(pedido);
   } catch (e) { next(e); }
 };
 
-// Agregar un pago parcial o total
+// Registrar pago
 exports.registrarPago = async (req, res, next) => {
   try {
     const { monto, metodo = 'efectivo', nota } = req.body;
-    if (monto === undefined || monto <= 0) throw new Error('El monto del pago debe ser mayor a 0');
+    const m = Number(monto);
+    if (!m || m <= 0) throw new Error('El monto del pago debe ser mayor a 0');
 
     const pedido = await Pedido.findById(req.params.id);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
     if (pedido.estado === 'Cancelado') throw new Error('No se puede pagar un pedido cancelado');
 
-    const nuevoPagado = pedido.pagado + monto;
-    const nuevoSaldo  = Math.max(pedido.total - nuevoPagado, 0);
-    const nuevoEstadoPago = calcularEstadoPago(pedido.total, nuevoPagado);
+    const nuevoPagado = Number(pedido.pagado) + m;
+    const nuevoSaldo  = Math.max(Number(pedido.total) - nuevoPagado, 0);
+    const nuevoEstadoPago = calcularEstadoPago(Number(pedido.total), nuevoPagado);
 
-    pedido.pagos.push({ monto, metodo, nota });
-    pedido.pagado = nuevoPagado;
-    pedido.saldo = nuevoSaldo;
-    pedido.estadoPago = nuevoEstadoPago;
+    pedido.pagos.push({ monto: m, metodo, nota });
+    pedido.pagado    = nuevoPagado;
+    pedido.saldo     = nuevoSaldo;
+    pedido.estadoPago= nuevoEstadoPago;
 
     await pedido.save();
 
     const populated = await Pedido.findById(pedido._id)
       .populate('cliente', 'nombre apellido')
-      .populate('producto', 'nombre');
+      .populate('producto', 'nombre precioUnitario');
 
     res.status(200).json(populated);
   } catch (e) { next(e); }
 };
 
-// Marcar como entregado
+// Entregar
 exports.entregarPedido = async (req, res, next) => {
   try {
     const pedido = await Pedido.findByIdAndUpdate(
       req.params.id,
       { estado: 'Entregado', entregadoEn: new Date() },
       { new: true }
-    ).populate('cliente', 'nombre apellido')
-     .populate('producto', 'nombre');
+    )
+    .populate('cliente', 'nombre apellido')
+    .populate('producto', 'nombre precioUnitario');
 
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
     res.status(200).json(pedido);
   } catch (e) { next(e); }
 };
 
-// Cancelar pedido (restaura inventario si aún no estaba entregado)
+// Cancelar (restaura inventario)
 exports.cancelarPedido = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -226,15 +241,21 @@ exports.cancelarPedido = async (req, res, next) => {
     const pedido = await Pedido.findById(req.params.id).session(session);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
     if (pedido.estado === 'Entregado') throw new Error('No se puede cancelar un pedido ya entregado');
-    if (pedido.estado === 'Cancelado') return res.status(200).json(pedido);
+    if (pedido.estado === 'Cancelado') {
+      await session.commitTransaction();
+      session.endSession();
+      return res.status(200).json(pedido);
+    }
 
-    // Restaurar inventario según receta del producto
-    const prod = await Producto.findById(pedido.producto).populate('materiales.material').session(session);
+    const prod = await Producto.findById(pedido.producto)
+      .populate('materiales.material')
+      .session(session);
+
     if (!prod) throw new Error('Producto del pedido no encontrado');
 
-    for (const item of prod.materiales) {
-      const devolver = item.cantidadPorUnidad * pedido.cantidad;
-      const inv = await Inventario.findById(item.material._id).session(session).exec();
+    for (const item of (prod.materiales || [])) {
+      const devolver = Number(item.cantidadPorUnidad || 0) * Number(pedido.cantidad || 0);
+      const inv = await Inventario.findById(item.material?._id || item.material).session(session).exec();
       inv.cantidadDisponible += devolver;
       await inv.save({ session });
     }
@@ -247,7 +268,7 @@ exports.cancelarPedido = async (req, res, next) => {
 
     const populated = await Pedido.findById(pedido._id)
       .populate('cliente', 'nombre apellido')
-      .populate('producto', 'nombre');
+      .populate('producto', 'nombre precioUnitario');
 
     res.status(200).json(populated);
   } catch (e) {

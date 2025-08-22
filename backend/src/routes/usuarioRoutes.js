@@ -1,14 +1,14 @@
 const express = require('express');
 const UsuarioController = require('../controllers/usuarioController');
 const Usuario = require('../models/usuario');
-const { auth, requireRole } = require('../middleware/auth');
+const { auth,  } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Solo admin
-router.get('/', auth, requireRole('admin'), UsuarioController.obtenerUsuarios);
+router.get('/', auth, UsuarioController.obtenerUsuarios);
 
-router.get('/:id', auth, requireRole('admin'), async (req, res, next) => {
+router.get('/:id', auth, async (req, res, next) => {
   try {
     const usuario = await Usuario.findById(req.params.id).select('-contrasena').lean();
     if (!usuario) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
@@ -16,9 +16,9 @@ router.get('/:id', auth, requireRole('admin'), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/', auth, requireRole('admin'), UsuarioController.crearUsuario);
-router.put('/:id', auth, requireRole('admin'), UsuarioController.actualizarUsuario);
-router.delete('/:id', auth, requireRole('admin'), UsuarioController.eliminarUsuario);
+router.post('/', auth, UsuarioController.crearUsuario);
+router.put('/:id', auth, UsuarioController.actualizarUsuario);
+router.delete('/:id', auth, UsuarioController.eliminarUsuario);
 
 // ⚠️ NO login aquí (ya existe en authRoutes: POST /api/usuarios/login)
 

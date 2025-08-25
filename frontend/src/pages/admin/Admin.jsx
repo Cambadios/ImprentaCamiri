@@ -13,14 +13,16 @@ export default function AdminTabs() {
       usuario?.usuario?.nombreCompleto?.trim() ||
       usuario?.nombreCompleto?.trim() ||
       userName;
-  } catch (e) {console.log(e)}
+  } catch (e) {
+    console.log(e);
+  }
 
   const tabs = useMemo(
     () => [
       { id: "dashboard", label: "Dashboard", icon: "📊", path: "dashboard" },
       { id: "clientes", label: "Clientes", icon: "🧑‍💼", path: "clientes" },
       { id: "productos", label: "Productos", icon: "🏷️", path: "productos" },
-      { id: "inventario", label: "Inventario", icon: "📦", path: "inventario" },
+      { id: "insumos", label: "Insumos", icon: "📦", path: "inventario" },
       { id: "pedidos", label: "Pedidos", icon: "🧾", path: "pedidos" },
       { id: "usuarios", label: "Usuarios", icon: "👤", path: "usuarios" },
       { id: "reportes", label: "Reportes", icon: "🧩", path: "reportes" },
@@ -35,55 +37,76 @@ export default function AdminTabs() {
   };
 
   const goHome = () => {
-    // si tu ruta index de /admin redirige a dashboard, puedes ir directo a /admin
-    // o si prefieres explícito:
     navigate("/admin", { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-yellow-100 to-yellow-100">
-      <header className="bg-yellow-600 text-white p-4 flex justify-between items-center rounded-b-xl shadow-md">
-        <div className="text-lg font-semibold">
-          <div>Imprenta Camiri</div>
-          <div className="text-sm">Administración</div>
+      {/* Header */}
+      <header className="bg-yellow-600 text-white px-4 py-3 flex items-center justify-between rounded-b-xl shadow-md">
+        {/* Izquierda: Logo + Marca */}
+        <div
+          className="flex items-center gap-3 cursor-pointer select-none"
+          onClick={goHome}
+          title="Ir al inicio"
+        >
+          {/* Logo desde /public/logo.png */}
+          <img
+            src="/logo.png"
+            alt="Logo Imprenta Camiri"
+            className="h-10 w-10 object-contain rounded-md bg-white/10 p-1"
+            draggable="false"
+          />
+          <div className="leading-tight">
+            <div className="text-lg font-semibold">Imprenta Camiri</div>
+            <div className="text-sm opacity-90">Administración</div>
+          </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="text-white font-medium">{userName}</div>
+
+        {/* Derecha: Usuario + Acciones */}
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:block text-white font-medium">
+            {userName}
+          </div>
           <Button
-            label="Ir al Inicio"
+            label="Inicio"
             onClick={goHome}
             className="p-button-outlined p-button-text text-white hover:bg-yellow-700"
+            aria-label="Ir al inicio"
           />
           <Button
             label="Salir"
             onClick={logout}
             className="p-button-outlined p-button-danger text-white hover:bg-red-600"
+            aria-label="Cerrar sesión"
           />
         </div>
       </header>
 
-      <nav className="bg-white shadow-md py-2 flex space-x-4 overflow-x-auto rounded-xl mb-4">
+      {/* Tabs */}
+      <nav className="bg-white shadow-md py-2 flex flex-wrap gap-2 md:gap-3 overflow-x-auto rounded-xl my-4 px-2">
         {tabs.map((t) => (
           <NavLink
             key={t.id}
-            to={t.path}                // ruta relativa dentro de /admin
-            end                         // evita marcar 'dashboard' activo en subrutas
+            to={t.path}
+            end
             title={t.label}
             className={({ isActive }) =>
               [
-                "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ease-in-out",
+                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ease-in-out whitespace-nowrap",
                 isActive
                   ? "bg-yellow-500 text-white"
                   : "text-gray-700 hover:bg-yellow-200 hover:text-yellow-600",
               ].join(" ")
             }
           >
-            <span>{t.icon}</span>
+            <span aria-hidden="true">{t.icon}</span>
             <span>{t.label}</span>
           </NavLink>
         ))}
       </nav>
 
+      {/* Contenido */}
       <main className="p-4 bg-white rounded-b-xl shadow-lg">
         <Outlet />
       </main>

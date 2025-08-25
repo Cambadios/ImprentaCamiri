@@ -1,43 +1,63 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./pages/auth/Login"; // Importa el componente Login
-import Admin from "./pages/admin/Admin"; // Ruta al panel Admin
-import UsuarioTabs from "./pages/maquinaria/Maquinaria"; // Ruta al panel de Usuario
-import OlvideContrasena from "./pages/auth/OlvideContrasena"; // Ruta al formulario de Olvidé la contraseña
-import RestablecerContrasena from "./pages/auth/RestablecerContrasena"; // Ruta al formulario de Restablecer la contraseña
-import PrivateRoute from "./pages/auth/PrivateRoute"; // Ruta del componente PrivateRoute
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+import Login from "./pages/auth/Login";
+
+import Admin from "./pages/admin/Admin";
+import MaquinariaTabs from "./pages/maquinaria/Maquinaria.jsx"; // layout de Maquinaria
+
+import OlvideContrasena from "./pages/auth/OlvideContrasena";
+import RestablecerContrasena from "./pages/auth/RestablecerContrasena";
+import PrivateRoute from "./pages/auth/PrivateRoute";
+
 import ClientesPages from "./pages/admin/clientes/ClientesPages";
 import InventarioPage from "./pages/admin/inventario/InventarioPages";
 import PedidoPage from "./pages/admin/pedidos/PedidosPages";
 import ProductoPage from "./pages/admin/productos/ProductosPages";
 import UsuariosPage from "./pages/admin/usuarios/UsuariosPages";
 
+// Maquinaria (asegúrate que estos archivos tienen export default)
+import ClientesPageMaquinaria from "./pages/maquinaria/clientes/ClientesPagesMaquinaria.jsx";
+import PedidosPageMaquinaria  from "./pages/maquinaria/pedidos/PedidosPagesMaquinaria.jsx";
+import InsumosPageMaquinaria  from "./pages/maquinaria/insumos/InsumosPagesMaquinaria.jsx";
+
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} /> {/* Ruta al login */}
-        <Route path="/login" element={<Login />} /> {/* Ruta al login */}
+        {/* Público */}
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/olvide-contrasena" element={<OlvideContrasena />} />
         <Route path="/restablecer-contrasena/:token" element={<RestablecerContrasena />} />
 
-        {/* Rutas protegidas para admin */}
+        {/* ADMIN protegido */}
         <Route element={<PrivateRoute roles={["admin", "administrador"]} />}>
-          <Route path="/admin" element={<Admin />} > {/* Rutas dentro del admin */}
-            <Route path="clientes" element={<ClientesPages />} /> 
+          <Route path="/admin" element={<Admin />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<div>Dashboard (placeholder)</div>} />
+            <Route path="clientes" element={<ClientesPages />} />
             <Route path="inventario" element={<InventarioPage />} />
             <Route path="pedidos" element={<PedidoPage />} />
             <Route path="productos" element={<ProductoPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
-
-            {/* Aquí agregarías más rutas para otras vistas de admin */}
+            <Route path="reportes" element={<div>Reportes (placeholder)</div>} />
           </Route>
         </Route>
 
-        {/* Rutas protegidas para usuario normal */}
+        {/* MAQUINARIA protegido */}
         <Route element={<PrivateRoute roles={["usuario_normal"]} />}>
-          <Route path="/maquinaria" element={<UsuarioTabs />} />
+          <Route path="/maquinaria" element={<MaquinariaTabs />}>
+            {/* index -> Inicio del panel */}
+            <Route index element={<div>Panel operativo (bandeja, incidencias, historial, notas)…</div>} />
+            <Route path="clientes" element={<ClientesPageMaquinaria />} />
+            <Route path="pedidos"  element={<PedidosPageMaquinaria />} />
+            <Route path="insumos"  element={<InsumosPageMaquinaria />} />
+          </Route>
         </Route>
+
+        {/* 404 */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );

@@ -52,7 +52,6 @@ const pedidoSchema = new mongoose.Schema({
 // Índices adicionales para orden/consultas
 pedidoSchema.index({ createdAt: -1 });
 
-// Validación cruzada: coherencia de totales
 pedidoSchema.pre('validate', function(next) {
   // Recalcular total si tenemos precio y cantidad
   if (this.isModified('precioUnitarioPedido') || this.isModified('cantidad') || this.isNew) {
@@ -61,7 +60,6 @@ pedidoSchema.pre('validate', function(next) {
     this.total = to2(pu * q);
   }
 
-  // Asegurar límites de pagado/saldo
   const total  = Number(this.total || 0);
   let pagado   = Number(this.pagado || 0);
   if (pagado < 0) pagado = 0;

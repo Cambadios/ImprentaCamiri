@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import InventarioList from "./InventarioList";
 import InventarioForm from "./InventarioForm";
-import { apiFetch } from "../../../api/http"; // Asegúrate de que apiFetch esté correctamente importado
+import { apiFetch } from "../../../api/http"; 
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
 
 const InventarioPage = () => {
   const [inventarios, setInventarios] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [inventarioEdit, setInventarioEdit] = useState(null); // Cambié la variable a 'inventarioEdit'
-  const [searchTerm, setSearchTerm] = useState(""); // Estado para la búsqueda
+  const [inventarioEdit, setInventarioEdit] = useState(null); 
+  const [searchTerm, setSearchTerm] = useState(""); 
 
-  // Obtener lista de productos del inventario
+  // Obtener lista
   useEffect(() => {
     const fetchInventarios = async () => {
       try {
@@ -44,7 +44,7 @@ const InventarioPage = () => {
         prevInventarios.filter((inventario) => inventario._id !== id)
       );
     } catch (error) {
-      console.error("Error al eliminar inventario", error);
+      console.error("Error al eliminar insumo", error);
     }
   };
 
@@ -82,7 +82,7 @@ const InventarioPage = () => {
         });
 
         if (!response.ok) {
-          throw new Error("Error al crear el producto");
+          throw new Error("Error al crear el insumo");
         }
 
         const createdInventario = await response.json();
@@ -91,7 +91,7 @@ const InventarioPage = () => {
       setModalVisible(false);
       setInventarioEdit(null); // Limpiar estado de edición después de guardar
     } catch (error) {
-      console.error("Error al guardar producto", error);
+      console.error("Error al guardar el insumo", error);
     }
   };
 
@@ -104,10 +104,10 @@ const InventarioPage = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-semibold text-gray-700">
-          Gestión de Inventario
+          Lista de Insumos
         </h2>
         <Button
-          label="Nuevo Producto"
+          label="Nuevo Insumo"
           icon="pi pi-plus"
           className="p-button-success"
           onClick={() => setModalVisible(true)}

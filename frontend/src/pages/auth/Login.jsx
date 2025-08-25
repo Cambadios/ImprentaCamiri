@@ -1,34 +1,71 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { apiFetch } from "../../api/http"; // Asumiendo que este archivo es el mismo que antes
-import { InputText } from "primereact/inputtext";  // PrimeReact Input
-import { Password } from "primereact/password";  // PrimeReact Password
-import { Button } from "primereact/button";  // PrimeReact Button
+import { apiFetch } from "../../api/http";
+import { InputText } from "primereact/inputtext";
+import { Password } from "primereact/password";
+import { Button } from "primereact/button";
 
 export default function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ correo: "", contrasena: "" });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const change = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  // Errores por campo + error general del backend
+  const [errors, setErrors] = useState({
+    correo: "",
+    contrasena: "",
+    general: "",
+  });
+  const [touched, setTouched] = useState({ correo: false, contrasena: false });
 
+  const isGmail = (v) => /^[^\s@]+@gmail\.com$/i.test((v || "").trim());
+
+  const change = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+
+    // Validación en vivo
+    if (name === "correo") {
+      if (!value || !isGmail(value)) {
+        setErrors((er) => ({
+          ...er,
+          correo: "Por favor ingrese un correo @gmail.com",
+        }));
+      } else {
+        setErrors((er) => ({ ...er, correo: "" }));
+      }
+    }
+    if (name === "contrasena") {
+      if (!value) {
+        setErrors((er) => ({
+          ...er,
+          contrasena: "La contraseña es obligatoria",
+        }));
+      } else {
+        setErrors((er) => ({ ...er, contrasena: "" }));
+      }
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setErrors((er) => ({ ...er, general: "" }));
+    setTouched({ correo: true, contrasena: true });
 
-    // Validación previa antes de enviar la solicitud
-    if (!form.correo || !form.contrasena) {
-      setError("Correo y contraseña son requeridos.");
-      setLoading(false);
-      return; // Detener la ejecución si alguno está vacío
-    }
+    // Validaciones previas
+    const correoError =
+      !form.correo || !isGmail(form.correo)
+        ? "Por favor ingrese un correo @gmail.com"
+        : "";
+    const passError = !form.contrasena ? "La contraseña es obligatoria" : "";
 
-    // Validación para correo con @gmail.com
-    if (!form.correo.endsWith("@gmail.com")) {
-      setError("Por favor ingresa un correo válido de Gmail.");
+    if (correoError || passError) {
+      setErrors((er) => ({
+        ...er,
+        correo: correoError,
+        contrasena: passError,
+      }));
       setLoading(false);
       return;
     }
@@ -36,10 +73,11 @@ export default function Login() {
     try {
       const res = await apiFetch("/login", {
         method: "POST",
-        body: JSON.stringify({ correo: form.correo, contrasena: form.contrasena }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: JSON.stringify({
+          correo: form.correo.trim(),
+          contrasena: form.contrasena,
+        }),
+        headers: { "Content-Type": "application/json" },
       });
 
       if (!res.ok) {
@@ -48,22 +86,27 @@ export default function Login() {
       }
 
       const data = await res.json();
-      // Guardar los datos de usuario y el token en localStorage
       localStorage.setItem("usuario", JSON.stringify(data));
       if (data.token) localStorage.setItem("token", data.token);
 
-      const rol = data.usuario?.rol || "usuario"; // Convertir y limpiar el rol
-      localStorage.setItem("role", rol || "usuario");
+      const rol = data.usuario?.rol || "usuario";
+      localStorage.setItem("role", rol);
 
       if (rol === "administrador" || rol === "admin") {
         navigate("/admin", { replace: true });
       } else if (rol === "usuario_normal") {
         navigate("/maquinaria", { replace: true });
       } else {
-        setError("Rol de usuario no reconocido.");
+        setErrors((er) => ({
+          ...er,
+          general: "Rol de usuario no reconocido.",
+        }));
       }
     } catch (err) {
-      setError("Usuario o Contraseña Incorrectos");
+      setErrors((er) => ({
+        ...er,
+        general: "Usuario o Contraseña Incorrectos",
+      }));
       console.log(err);
     } finally {
       setLoading(false);
@@ -79,43 +122,64 @@ export default function Login() {
         <h3 className="text-xl font-semibold mb-4 text-center text-yellow-600">
           Imprenta Camiri
         </h3>
+        <p className="text-gray-600 text-center mb-6">
+          Ingresa tus credenciales para continuar.
+        </p>
 
-        <p className="text-gray-600 text-center mb-6">Ingresa tus credenciales para continuar.</p>
-
-        {error && (
+        {errors.general && (
           <p className="text-red-500 font-semibold text-center mb-4">
-            {error}
+            {errors.general}
           </p>
         )}
 
         <form onSubmit={submit}>
+          {/* Correo */}
           <div className="mb-4">
-            <label htmlFor="correo" className="block text-gray-700">Correo</label>
+            <label htmlFor="correo" className="block text-gray-700">
+              Correo
+            </label>
             <InputText
               id="correo"
               name="correo"
+              type="email" // <- tipo email
               value={form.correo}
               onChange={change}
+              onBlur={() => setTouched((t) => ({ ...t, correo: true }))}
               placeholder="tucorreo@gmail.com"
-              className="w-full p-3 border border-yellow-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              className={`w-full p-3 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 ${
+                touched.correo && errors.correo
+                  ? "p-invalid border-red-400"
+                  : "border-yellow-300"
+              }`}
               autoComplete="off"
             />
+            {touched.correo && errors.correo && (
+              <small className="p-error">{errors.correo}</small>
+            )}
           </div>
 
+          {/* Contraseña */}
           <div className="mb-6">
-            <label htmlFor="contrasena" className="block text-gray-700">Contraseña</label>
+            <label htmlFor="contrasena" className="block text-gray-700">
+              Contraseña
+            </label>
             <div className="relative">
               <Password
                 id="contrasena"
                 name="contrasena"
                 value={form.contrasena}
                 onChange={change}
+                onBlur={() => setTouched((t) => ({ ...t, contrasena: true }))}
                 placeholder="••••••••"
-                className="w-full p-3 border border-yellow-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                feedback={false}
                 toggleMask
+                className="w-full" // contenedor ocupa todo
+                inputClassName="w-full p-3 border border-yellow-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
               />
-
             </div>
+            {touched.contrasena && errors.contrasena && (
+              <small className="p-error">{errors.contrasena}</small>
+            )}
           </div>
 
           <div className="flex justify-between items-center mb-4">
@@ -128,7 +192,12 @@ export default function Login() {
           </div>
 
           <div className="text-center">
-            <Link to="/olvide-contrasena" className="text-yellow-500 hover:underline">¿Olvidaste tu contraseña?</Link>
+            <Link
+              to="/olvide-contrasena"
+              className="text-yellow-500 hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
         </form>
       </div>

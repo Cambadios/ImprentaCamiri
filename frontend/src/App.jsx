@@ -16,6 +16,10 @@ import PedidoPage from "./pages/admin/pedidos/PedidosPages";
 import ProductoPage from "./pages/admin/productos/ProductosPages";
 import UsuariosPage from "./pages/admin/usuarios/UsuariosPages";
 import Reportes from "./pages/admin/reportes/Reportes.jsx";
+import AdminDashboardPage from "./pages/admin/dashboard/index.jsx";
+import HomePages from "./pages/admin/home/HomePages.jsx";
+
+
 
 
 // Maquinaria (asegúrate que estos archivos tienen export default)
@@ -36,15 +40,14 @@ export default function App() {
         {/* ADMIN protegido */}
         <Route element={<PrivateRoute roles={["admin", "administrador"]} />}>
           <Route path="/admin" element={<Admin />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<div>Dashboard (placeholder)</div>} />
+            <Route index element={<HomePages />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
             <Route path="clientes" element={<ClientesPages />} />
             <Route path="inventario" element={<InventarioPage />} />
             <Route path="pedidos" element={<PedidoPage />} />
             <Route path="productos" element={<ProductoPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
             <Route path="reportes" element={<Reportes />} />
-            <Route path="reportes" element={<div>Reportes (placeholder)</div>} />
           </Route>
         </Route>
 

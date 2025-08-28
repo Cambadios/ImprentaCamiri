@@ -17,11 +17,11 @@ import ProductoPage from "./pages/admin/productos/ProductosPages";
 import UsuariosPage from "./pages/admin/usuarios/UsuariosPages";
 import Reportes from "./pages/admin/reportes/Reportes.jsx";
 
+
 // Maquinaria (asegúrate que estos archivos tienen export default)
 import ClientesPageMaquinaria from "./pages/maquinaria/clientes/ClientesPagesMaquinaria.jsx";
 import PedidosPageMaquinaria  from "./pages/maquinaria/pedidos/PedidosPagesMaquinaria.jsx";
 import InsumosPageMaquinaria  from "./pages/maquinaria/insumos/InsumosPagesMaquinaria.jsx";
-
 
 export default function App() {
   return (
@@ -44,6 +44,7 @@ export default function App() {
             <Route path="productos" element={<ProductoPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
             <Route path="reportes" element={<Reportes />} />
+            <Route path="reportes" element={<div>Reportes (placeholder)</div>} />
           </Route>
         </Route>
 

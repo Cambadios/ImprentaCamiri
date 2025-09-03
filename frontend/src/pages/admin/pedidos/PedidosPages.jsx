@@ -6,6 +6,7 @@ import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { apiFetch } from "../../../api/http";
+import { downloadFile } from "../../../api/download";
 
 const normalizeDigits = (v) => (v ? String(v).replace(/\D+/g, "") : "");
 const safeStr = (v) => (v == null ? "" : String(v));
@@ -19,6 +20,11 @@ const PedidoPage = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const toast = useRef(null);
+  const [estado] = useState("");
+  const [q] = useState("");
+  const qs = new URLSearchParams();
+  if (estado) qs.set("estado", estado);
+  if (q) qs.set("q", q);
 
   // ---- helpers ----
   const parseResponse = async (resp) => {
@@ -40,7 +46,13 @@ const PedidoPage = () => {
       try {
         const resp = await apiFetch("/pedidos");
         const json = await resp.json();
-        setPedidos(Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : []);
+        setPedidos(
+          Array.isArray(json?.data)
+            ? json.data
+            : Array.isArray(json)
+            ? json
+            : []
+        );
       } catch (e) {
         console.error("Error al obtener pedidos", e);
         setPedidos([]);
@@ -57,7 +69,11 @@ const PedidoPage = () => {
       try {
         const resp = await apiFetch("/clientes");
         const json = await resp.json();
-        const arr = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
+        const arr = Array.isArray(json?.data)
+          ? json.data
+          : Array.isArray(json)
+          ? json
+          : [];
         setClientes(arr);
       } catch (e) {
         console.error("Error al obtener clientes", e);
@@ -73,7 +89,13 @@ const PedidoPage = () => {
       try {
         const resp = await apiFetch("/productos"); // o /inventario según tu back
         const json = await resp.json();
-        setProductos(Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : []);
+        setProductos(
+          Array.isArray(json?.data)
+            ? json.data
+            : Array.isArray(json)
+            ? json
+            : []
+        );
       } catch (e) {
         console.error("Error al obtener productos", e);
         setProductos([]);
@@ -107,7 +129,11 @@ const PedidoPage = () => {
     try {
       await apiFetch(`/pedidos/${id}`, { method: "DELETE" });
       setPedidos((prev) => prev.filter((p) => p._id !== id));
-      toast.current?.show({ severity: "success", summary: "Pedido eliminado", life: 2200 });
+      toast.current?.show({
+        severity: "success",
+        summary: "Pedido eliminado",
+        life: 2200,
+      });
     } catch (e) {
       console.error("Error al eliminar pedido", e);
       toast.current?.show({
@@ -145,7 +171,11 @@ const PedidoPage = () => {
         }
 
         setPedidos((prev) => prev.map((p) => (p._id === data._id ? data : p)));
-        toast.current?.show({ severity: "success", summary: "Pedido actualizado", life: 2500 });
+        toast.current?.show({
+          severity: "success",
+          summary: "Pedido actualizado",
+          life: 2500,
+        });
         setModalVisible(false);
         setPedidoEdit(null);
       } else {
@@ -167,7 +197,11 @@ const PedidoPage = () => {
         }
 
         setPedidos((prev) => [data, ...prev]);
-        toast.current?.show({ severity: "success", summary: "Pedido creado", life: 2500 });
+        toast.current?.show({
+          severity: "success",
+          summary: "Pedido creado",
+          life: 2500,
+        });
         setModalVisible(false);
         setPedidoEdit(null);
       }
@@ -194,14 +228,28 @@ const PedidoPage = () => {
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-semibold text-gray-700">Gestión de Pedidos</h2>
-        <Button
-          label="Nuevo Pedido"
-          icon="pi pi-plus"
-          className="p-button-success"
-          onClick={() => setModalVisible(true)}
-          disabled={loading}
-        />
+        <h2 className="text-3xl font-semibold text-gray-700">
+          Gestión de Pedidos
+        </h2>
+        <div className="space-x-3">
+          <Button
+            label="Nuevo Pedido"
+            icon="pi pi-plus"
+            className="p-button-success"
+            onClick={() => setModalVisible(true)}
+            disabled={loading}
+          />
+          <Button
+            label="Descargar PDF"
+            icon="pi pi-download"
+            onClick={() =>
+              downloadFile(
+                `/api/export/pedidos.pdf?${qs.toString()}`,
+                "Listado de Pedidos.pdf"
+              )
+            }
+          />
+        </div>
       </div>
 
       {/* Barra de búsqueda (nombre completo o teléfono) */}
@@ -221,7 +269,11 @@ const PedidoPage = () => {
           <i className="pi pi-spin pi-spinner text-2xl" />
         </div>
       ) : (
-        <PedidoList pedidos={filteredPedidos} onEdit={handleEdit} onDelete={handleDelete} />
+        <PedidoList
+          pedidos={filteredPedidos}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       )}
 
       {/* Form */}

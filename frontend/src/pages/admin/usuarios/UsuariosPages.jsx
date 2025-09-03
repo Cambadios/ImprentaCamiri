@@ -7,6 +7,7 @@ import { Button } from "primereact/button";
 import { apiFetch } from "../../../api/http";
 import UsuariosList from "./UsuariosList";
 import UsuarioForm from "./UsuariosForm";
+import { downloadFile } from "../../../api/download";
 
 const UsuariosPage = () => {
   const toast = useRef(null);
@@ -23,7 +24,9 @@ const UsuariosPage = () => {
     const sessionRaw = localStorage.getItem("usuario");
     const session = sessionRaw ? JSON.parse(sessionRaw) : null;
     currentRole = session?.usuario?.rol || session?.rol || "usuario";
-  } catch (e) { console.log(e); }
+  } catch (e) {
+    console.log(e);
+  }
   const isAdmin = currentRole === "admin" || currentRole === "administrador";
   const headerTitle = isAdmin ? "Gestión de Usuarios" : "Gestión de Usuarios";
 
@@ -81,7 +84,9 @@ const UsuariosPage = () => {
       acceptClassName: "p-button-danger",
       accept: async () => {
         try {
-          const resp = await apiFetch(`/usuarios/${row._id}`, { method: "DELETE" });
+          const resp = await apiFetch(`/usuarios/${row._id}`, {
+            method: "DELETE",
+          });
           if (!resp.ok) throw new Error("Error al eliminar");
           toast.current?.show({
             severity: "success",
@@ -130,14 +135,18 @@ const UsuariosPage = () => {
     try {
       const url = isEdit ? `/usuarios/${usuarioEdit._id}` : "/usuarios";
       const method = isEdit ? "PUT" : "POST";
-      const resp = await apiFetch(url, { method, body: JSON.stringify(payload) });
+      const resp = await apiFetch(url, {
+        method,
+        body: JSON.stringify(payload),
+      });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data?.mensaje || "Error en el guardado");
 
       toast.current?.show({
         severity: "success",
         summary: isEdit ? "Actualizado" : "Creado",
-        detail: data?.mensaje || (isEdit ? "Usuario actualizado" : "Usuario creado"),
+        detail:
+          data?.mensaje || (isEdit ? "Usuario actualizado" : "Usuario creado"),
       });
 
       setVisibleForm(false);
@@ -160,13 +169,22 @@ const UsuariosPage = () => {
       {/* Header como ClientesPage */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-semibold text-gray-700">{headerTitle}</h2>
-        <Button
-          label="Nuevo Usuario"
-          icon="pi pi-user-plus"
-          className="p-button-success"
-          onClick={onCrear}
-          disabled={loading}
-        />
+        <div className="space-x-3">
+          <Button
+            label="Nuevo Usuario"
+            icon="pi pi-user-plus"
+            className="p-button-success"
+            onClick={onCrear}
+            disabled={loading}
+          />
+          <Button
+            label="Descargar PDF"
+            icon="pi pi-download"
+            onClick={() =>
+              downloadFile("/api/export/usuarios.pdf", "Listado de Usuarios.pdf")
+            }
+          />
+        </div>
       </div>
 
       {/* Barra de búsqueda (paleta copiada: gris + full-width) */}

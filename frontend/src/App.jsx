@@ -15,9 +15,9 @@ import InventarioPage from "./pages/admin/inventario/InventarioPages";
 import PedidoPage from "./pages/admin/pedidos/PedidosPages";
 import ProductoPage from "./pages/admin/productos/ProductosPages";
 import UsuariosPage from "./pages/admin/usuarios/UsuariosPages";
-import Reportes from "./pages/admin/reportes/Reportes.jsx";
 import AdminDashboardPage from "./pages/admin/dashboard/index.jsx";
 import HomePages from "./pages/admin/home/HomePages.jsx";
+import ReportesPage from "./pages/admin/reportes/ReportesPages.jsx";
 
 
 
@@ -47,7 +47,7 @@ export default function App() {
             <Route path="pedidos" element={<PedidoPage />} />
             <Route path="productos" element={<ProductoPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
-            <Route path="reportes" element={<Reportes />} />
+            <Route path="reportes" element={<ReportesPage />} />
           </Route>
         </Route>
 

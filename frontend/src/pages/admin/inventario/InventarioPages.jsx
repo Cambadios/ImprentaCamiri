@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import InventarioList from "./InventarioList";
 import InventarioForm from "./InventarioForm";
-import { apiFetch } from "../../../api/http"; 
+import { apiFetch } from "../../../api/http";
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
+import { downloadFile } from "../../../api/download";
 
 const InventarioPage = () => {
   const [inventarios, setInventarios] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [inventarioEdit, setInventarioEdit] = useState(null); 
-  const [searchTerm, setSearchTerm] = useState(""); 
+  const [inventarioEdit, setInventarioEdit] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [q] = useState("");
 
   // Obtener lista
   useEffect(() => {
@@ -106,12 +108,24 @@ const InventarioPage = () => {
         <h2 className="text-3xl font-semibold text-gray-700">
           Lista de Insumos
         </h2>
-        <Button
-          label="Nuevo Insumo"
-          icon="pi pi-plus"
-          className="p-button-success"
-          onClick={() => setModalVisible(true)}
-        />
+        <div className="space-x-4">
+          <Button
+            label="Nuevo Insumo"
+            icon="pi pi-plus"
+            className="p-button-success"
+            onClick={() => setModalVisible(true)}
+          />
+          <Button
+            label="Descargar PDF"
+            icon="pi pi-download"
+            onClick={() =>
+              downloadFile(
+                `/api/export/inventario.pdf?q=${encodeURIComponent(q || "")}`,
+                "Listado de Insumos.pdf"
+              )
+            }
+          />
+        </div>
       </div>
 
       {/* Barra de búsqueda */}

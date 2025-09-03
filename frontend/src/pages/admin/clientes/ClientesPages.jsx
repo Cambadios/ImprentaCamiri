@@ -1,22 +1,23 @@
 // src/components/ClientesPage.jsx
-import React, { useState, useEffect, useMemo } from 'react';
-import ClientesList from './ClientesList';
-import ClienteForm from './ClientesForm';
-import { apiFetch } from '../../../api/http';
-import { InputText } from 'primereact/inputtext';
-import { Button } from 'primereact/button';
+import React, { useState, useEffect, useMemo } from "react";
+import ClientesList from "./ClientesList";
+import ClienteForm from "./ClientesForm";
+import { apiFetch } from "../../../api/http";
+import { InputText } from "primereact/inputtext";
+import { Button } from "primereact/button";
+import { downloadFile } from "../../../api/download";
 
 const ClientesPage = () => {
-  const [clientes, setClientes] = useState([]);         // SIEMPRE array
+  const [clientes, setClientes] = useState([]); // SIEMPRE array
   const [isModalVisible, setModalVisible] = useState(false);
   const [clienteEdit, setClienteEdit] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Obtener lista de clientes
   useEffect(() => {
     const fetchClientes = async () => {
       try {
-        const response = await apiFetch('/clientes');
+        const response = await apiFetch("/clientes");
         const data = await response.json();
 
         // Soporta { data: [...] } o [...] directo
@@ -27,7 +28,7 @@ const ClientesPage = () => {
           : [];
         setClientes(arr);
       } catch (error) {
-        console.error('Error al obtener clientes', error);
+        console.error("Error al obtener clientes", error);
         setClientes([]); // evita undefined
       }
     };
@@ -35,7 +36,7 @@ const ClientesPage = () => {
   }, []);
 
   // Normalizar seguro para búsqueda
-  const safeStr = (v) => (v == null ? '' : String(v));
+  const safeStr = (v) => (v == null ? "" : String(v));
 
   // Búsqueda segura (apellido/teléfono)
   const filteredClientes = useMemo(() => {
@@ -55,10 +56,10 @@ const ClientesPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await apiFetch(`/clientes/${id}`, { method: 'DELETE' });
+      await apiFetch(`/clientes/${id}`, { method: "DELETE" });
       setClientes((prev) => prev.filter((c) => c._id !== id));
     } catch (error) {
-      console.error('Error al eliminar cliente', error);
+      console.error("Error al eliminar cliente", error);
     }
   };
 
@@ -67,15 +68,17 @@ const ClientesPage = () => {
       if (clienteEdit) {
         // Editar cliente
         const response = await apiFetch(`/clientes/${clienteEdit._id}`, {
-          method: 'PUT',
+          method: "PUT",
           body: JSON.stringify(cliente),
         });
         const updated = await response.json();
-        setClientes((prev) => prev.map((c) => (c._id === updated._id ? updated : c)));
+        setClientes((prev) =>
+          prev.map((c) => (c._id === updated._id ? updated : c))
+        );
       } else {
         // Crear cliente
-        const response = await apiFetch('/clientes', {
-          method: 'POST',
+        const response = await apiFetch("/clientes", {
+          method: "POST",
           body: JSON.stringify(cliente),
         });
         const created = await response.json();
@@ -84,7 +87,7 @@ const ClientesPage = () => {
       setClienteEdit(null);
       setModalVisible(false);
     } catch (error) {
-      console.error('Error al guardar cliente', error);
+      console.error("Error al guardar cliente", error);
     }
   };
 
@@ -96,13 +99,28 @@ const ClientesPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-semibold text-gray-700">Gestión de Clientes</h2>
-        <Button
-          label="Nuevo Cliente"
-          icon="pi pi-plus"
-          className="p-button-success"
-          onClick={() => setModalVisible(true)}
-        />
+        <h2 className="text-3xl font-semibold text-gray-700">
+          Gestión de Clientes
+        </h2>
+        <div className="space-x-4">
+          <Button
+            label="Nuevo Cliente"
+            icon="pi pi-plus"
+            className="p-button-success"
+            onClick={() => setModalVisible(true)}
+          />
+
+          <Button
+            label="Descargar PDF"
+            icon="pi pi-download"
+            onClick={() =>
+              downloadFile(
+                "/api/export/clientes.pdf",
+                "Listado de Clientes.pdf"
+              )
+            }
+          />
+        </div>
       </div>
 
       {/* Barra de búsqueda */}

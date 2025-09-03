@@ -7,8 +7,10 @@ const clienteRoutes = require('./clienteRoutes');
 const pedidoRoutes = require('./pedidoRoutes');
 const inventarioRoutes = require('./inventarioRoutes');
 const productoRoutes = require('./productoRoutes');
-const reporteRoutes = require('./reporteRoutes');
+const reporteRoutes = require('./reportesRoutes');
 const dashboardRoutes = require('./dashboardsRoutes')
+const exportRoutes = require('./exportRoutes');
+
 
 const router = express.Router();
 
@@ -23,6 +25,8 @@ router.use('/inventario', inventarioRoutes);
 router.use('/productos', productoRoutes);
 router.use('/reportes', reporteRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/export', exportRoutes);
+
 
 
 // Reportes (si adentro define '/reporte-pdf')

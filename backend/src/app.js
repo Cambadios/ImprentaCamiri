@@ -1,17 +1,19 @@
-// En app.js
+// app.js
+require('dotenv').config();  // <--- carga las variables de .env
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const routes = require('./routes');  // Importa todas las rutas desde 'routes/index.js'
-const { errorHandler } = require('./middleware/errorHandler');  // Middleware de errores
+const routes = require('./routes');
+const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Configuración de CORS
-const allowedOrigins = ['http://localhost:5173']; // Asegúrate de que el frontend esté en este puerto
+// Configuración de CORS usando .env
+const allowedOrigins = [process.env.CORS_ORIGIN];
 app.use(cors({
   origin: function (origin, callback) {
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
@@ -20,15 +22,15 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true,  // Permite el uso de cookies o encabezados de autenticación
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Usa el enrutador importado en lugar de definir las rutas manualmente
-app.use('/api', routes);  // Monta las rutas en el prefijo /api
+// Usa el enrutador
+app.use('/api', routes);
 
-// Middleware de manejo de errores
+// Middleware de errores
 app.use(errorHandler);
 
 module.exports = app;

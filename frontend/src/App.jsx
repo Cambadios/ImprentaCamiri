@@ -23,6 +23,7 @@ import ReportesPage from "./pages/admin/reportes/ReportesPages.jsx";
 
 
 // Maquinaria (asegúrate que estos archivos tienen export default)
+import HomePagesMaquinaria from "./pages/maquinaria/home/HomePages.jsx";
 import ClientesPageMaquinaria from "./pages/maquinaria/clientes/ClientesPagesMaquinaria.jsx";
 import PedidosPageMaquinaria  from "./pages/maquinaria/pedidos/PedidosPagesMaquinaria.jsx";
 import InsumosPageMaquinaria  from "./pages/maquinaria/insumos/InsumosPagesMaquinaria.jsx";
@@ -55,7 +56,7 @@ export default function App() {
         <Route element={<PrivateRoute roles={["usuario_normal"]} />}>
           <Route path="/maquinaria" element={<MaquinariaTabs />}>
             {/* index -> Inicio del panel */}
-            <Route index element={<div>Panel operativo (bandeja, incidencias, historial, notas)…</div>} />
+            <Route index element={<HomePagesMaquinaria />} />
             <Route path="clientes" element={<ClientesPageMaquinaria />} />
             <Route path="pedidos"  element={<PedidosPageMaquinaria />} />
             <Route path="insumos"  element={<InsumosPageMaquinaria />} />

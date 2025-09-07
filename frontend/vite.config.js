@@ -13,7 +13,7 @@ export default defineConfig({
         name: 'Imprenta Camiri',
         short_name: 'ImpCamiri',
         description: 'PWA Imprenta Camiri',
-        theme_color: '#0ea5e9',
+        theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
         scope: '/',

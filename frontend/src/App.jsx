@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 import Login from "./pages/auth/Login";
 
@@ -17,16 +22,14 @@ import ProductoPage from "./pages/admin/productos/ProductosPages";
 import UsuariosPage from "./pages/admin/usuarios/UsuariosPages";
 import AdminDashboardPage from "./pages/admin/dashboard/index.jsx";
 import HomePages from "./pages/admin/home/HomePages.jsx";
-import ReportesPage from "./pages/admin/reportes/ReportesPages.jsx";
-
-
+import CategoriasPage from "./pages/admin/categorias/CategoriasPages.jsx";
 
 
 // Maquinaria (asegúrate que estos archivos tienen export default)
 import HomePagesMaquinaria from "./pages/maquinaria/home/HomePages.jsx";
 import ClientesPageMaquinaria from "./pages/maquinaria/clientes/ClientesPagesMaquinaria.jsx";
-import PedidosPageMaquinaria  from "./pages/maquinaria/pedidos/PedidosPagesMaquinaria.jsx";
-import InsumosPageMaquinaria  from "./pages/maquinaria/insumos/InsumosPagesMaquinaria.jsx";
+import PedidosPageMaquinaria from "./pages/maquinaria/pedidos/PedidosPagesMaquinaria.jsx";
+import InsumosPageMaquinaria from "./pages/maquinaria/insumos/InsumosPagesMaquinaria.jsx";
 
 export default function App() {
   return (
@@ -36,7 +39,10 @@ export default function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/olvide-contrasena" element={<OlvideContrasena />} />
-        <Route path="/restablecer-contrasena/:token" element={<RestablecerContrasena />} />
+        <Route
+          path="/restablecer-contrasena/:token"
+          element={<RestablecerContrasena />}
+        />
 
         {/* ADMIN protegido */}
         <Route element={<PrivateRoute roles={["admin", "administrador"]} />}>
@@ -48,7 +54,7 @@ export default function App() {
             <Route path="pedidos" element={<PedidoPage />} />
             <Route path="productos" element={<ProductoPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
-            <Route path="reportes" element={<ReportesPage />} />
+            <Route path="categorias" element={<CategoriasPage />} />
           </Route>
         </Route>
 
@@ -58,8 +64,8 @@ export default function App() {
             {/* index -> Inicio del panel */}
             <Route index element={<HomePagesMaquinaria />} />
             <Route path="clientes" element={<ClientesPageMaquinaria />} />
-            <Route path="pedidos"  element={<PedidosPageMaquinaria />} />
-            <Route path="insumos"  element={<InsumosPageMaquinaria />} />
+            <Route path="pedidos" element={<PedidosPageMaquinaria />} />
+            <Route path="insumos" element={<InsumosPageMaquinaria />} />
           </Route>
         </Route>
 

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import PedidoList from "./PedidosList";
 import PedidoForm from "./PedidosForm";
+import PedidoKPICards from "../../../components/dashboard/PedidoKPICards";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
@@ -20,8 +21,11 @@ const PedidoPage = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const toast = useRef(null);
+
+  // Filtros (solo los anteriores)
   const [estado] = useState("");
   const [q] = useState("");
+
   const qs = new URLSearchParams();
   if (estado) qs.set("estado", estado);
   if (q) qs.set("q", q);
@@ -124,7 +128,6 @@ const PedidoPage = () => {
   };
 
   const handleDelete = async (id) => {
-    // Mantengo confirmación nativa para no alterar tu UX
     if (!window.confirm("¿Eliminar este pedido?")) return;
     try {
       await apiFetch(`/pedidos/${id}`, { method: "DELETE" });
@@ -227,10 +230,8 @@ const PedidoPage = () => {
       <Toast ref={toast} />
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-semibold text-gray-700">
-          Gestión de Pedidos
-        </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-3xl font-semibold text-gray-700">Gestión de Pedidos</h2>
         <div className="space-x-3">
           <Button
             label="Nuevo Pedido"
@@ -251,6 +252,9 @@ const PedidoPage = () => {
           />
         </div>
       </div>
+
+      {/* === Dashboard de KPIs === */}
+      <PedidoKPICards />
 
       {/* Barra de búsqueda (nombre completo o teléfono) */}
       <div className="mb-4">

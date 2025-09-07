@@ -10,46 +10,70 @@ const ProductoPage = () => {
   const [productos, setProductos] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [productoEdit, setProductoEdit] = useState(null);
-  const [materiales, setMateriales] = useState([]);
+
+  const [categoriasProd, setCategoriasProd] = useState([]); // solo tipo=producto
+  const [materiales, setMateriales] = useState([]);         // inventario tipo=insumo
+
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Función para obtener todos los productos con datos completos
   const fetchProductos = async () => {
     try {
       const response = await apiFetch("/productos");
       const data = await response.json();
-      setProductos(data);
+      setProductos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error al obtener productos", error);
     }
   };
 
-  // Obtener lista de productos al montar el componente
   useEffect(() => {
     fetchProductos();
   }, []);
 
-  // Obtener materiales disponibles
+  // Carga categorías (producto) y materiales (insumo)
   useEffect(() => {
-    const fetchMateriales = async () => {
+    (async () => {
       try {
-        const response = await apiFetch("/inventario");
-        const data = await response.json();
-        setMateriales(data);
-      } catch (error) {
-        console.error("Error al obtener materiales", error);
+        const respCat = await apiFetch("/categorias?tipo=producto");
+        const cats = await respCat.json();
+        setCategoriasProd(
+          (Array.isArray(cats) ? cats : []).map(c => ({
+            label: `${c.prefijo || ""} ${c.nombre}`.trim(),
+            value: c._id,
+            raw: c
+          }))
+        );
+      } catch (e) {
+        console.error("Error cargando categorías producto", e);
+        setCategoriasProd([]);
       }
-    };
-    fetchMateriales();
+
+      try {
+        const respMat = await apiFetch("/inventario");
+        const mats = await respMat.json();
+        // dejar solo insumos (por si el endpoint devuelve todo)
+        const options = (Array.isArray(mats) ? mats : [])
+          .filter(m => m?.categoria?.tipo === "insumo")
+          .map(m => ({
+            _id: m._id,
+            nombre: m.nombre,
+            unidadDeMedida: m.unidadDeMedida, // importante: coincide con backend de inventario
+          }));
+        setMateriales(options);
+      } catch (e) {
+        console.error("Error cargando materiales (insumos)", e);
+        setMateriales([]);
+      }
+    })();
   }, []);
 
-  // Función de búsqueda
-  const filteredProductos = productos.filter(
-    (producto) =>
-      producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (producto.categoria &&
-        producto.categoria.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Búsqueda cliente (tu backend no tiene ?q para productos)
+  const filteredProductos = productos.filter((p) => {
+    const byNombre = p?.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+    const catNombre = typeof p?.categoria === "object" ? (p.categoria?.nombre || "") : "";
+    const byCategoria = catNombre.toLowerCase().includes(searchTerm.toLowerCase());
+    return byNombre || byCategoria;
+  });
 
   const handleEdit = (producto) => {
     setProductoEdit(producto);
@@ -59,56 +83,29 @@ const ProductoPage = () => {
   const handleDelete = async (id) => {
     try {
       await apiFetch(`/productos/${id}`, { method: "DELETE" });
-      setProductos((prevProductos) =>
-        prevProductos.filter((producto) => producto._id !== id)
-      );
+      setProductos(prev => prev.filter(p => p._id !== id));
     } catch (error) {
       console.error("Error al eliminar producto", error);
     }
   };
 
-  const handleSave = async (producto) => {
+  const handleSave = async (payload) => {
     try {
       if (productoEdit) {
-        // Editar producto
-        const response = await apiFetch(`/productos/${productoEdit._id}`, {
+        const resp = await apiFetch(`/productos/${productoEdit._id}`, {
           method: "PUT",
-          body: JSON.stringify(producto),
+          body: JSON.stringify(payload),
+          headers: { "Content-Type": "application/json" },
         });
-
-        if (response.ok) {
-          // Opción 1: Recargar todos los productos para asegurar datos completos
-          await fetchProductos();
-
-          // Opción 2 (alternativa): Si el backend devuelve el producto completo con populate
-          // const updatedProducto = await response.json();
-          // // Obtener el producto individual con datos completos si es necesario
-          // const fullProductResponse = await apiFetch(/productos/${updatedProducto._id});
-          // const fullProduct = await fullProductResponse.json();
-          // setProductos((prev) =>
-          //   prev.map((p) => (p._id === fullProduct._id ? fullProduct : p))
-          // );
-        }
+        if (resp.ok) await fetchProductos();
       } else {
-        // Crear producto
-        const response = await apiFetch("/productos", {
+        const resp = await apiFetch("/productos", {
           method: "POST",
-          body: JSON.stringify(producto),
+          body: JSON.stringify(payload),
+          headers: { "Content-Type": "application/json" },
         });
-
-        if (response.ok) {
-          // Recargar todos los productos para obtener el nuevo con datos completos
-          await fetchProductos();
-
-          // Alternativa si prefieres no recargar todo:
-          // const newProducto = await response.json();
-          // // Obtener el producto con datos completos
-          // const fullProductResponse = await apiFetch(/productos/${newProducto._id});
-          // const fullProduct = await fullProductResponse.json();
-          // setProductos((prev) => [...prev, fullProduct]);
-        }
+        if (resp.ok) await fetchProductos();
       }
-
       setModalVisible(false);
       setProductoEdit(null);
     } catch (error) {
@@ -124,18 +121,13 @@ const ProductoPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-semibold text-gray-700">
-          Gestión de Productos
-        </h2>
+        <h2 className="text-3xl font-semibold text-gray-700">Gestión de Productos</h2>
         <div className="space-x-3">
           <Button
             label="Nuevo Producto"
             icon="pi pi-plus"
             className="p-button-success"
-            onClick={() => {
-              setProductoEdit(null); // Asegurar que no hay producto en edición
-              setModalVisible(true);
-            }}
+            onClick={() => { setProductoEdit(null); setModalVisible(true); }}
           />
           <Button
             label="Descargar PDF"
@@ -147,15 +139,18 @@ const ProductoPage = () => {
         </div>
       </div>
 
-      {/* Barra de búsqueda */}
+      {/* Búsqueda local */}
       <div className="mb-4">
-        <InputText
-          type="text"
-          placeholder="Buscar por nombre o categoría"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full"
-        />
+        <span className="p-input-icon-left w-full">
+          <i className="pi pi-search" />
+          <InputText
+            type="text"
+            placeholder="Buscar por nombre o categoría"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </span>
       </div>
 
       <ProductoList
@@ -169,6 +164,7 @@ const ProductoPage = () => {
         onHide={handleModalHide}
         onSave={handleSave}
         productoEdit={productoEdit}
+        categoriasProd={categoriasProd}
         materiales={materiales}
       />
     </div>

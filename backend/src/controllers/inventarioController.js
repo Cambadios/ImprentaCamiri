@@ -1,29 +1,36 @@
 // controllers/inventarioController.js
 const Inventario = require('../models/inventario');
 
+
 exports.createProducto = async (req, res) => {
   try {
     const {
-      nombre, descripcion, categoria,
+      nombre, descripcion, categoriaId,
+      marca, // ← NUEVO
       cantidadDisponible, unidadDeMedida,
       precioUnitario, fechaIngreso
     } = req.body;
 
-    if (!nombre || !descripcion || !categoria || cantidadDisponible == null || !unidadDeMedida || precioUnitario == null) {
+    if (!nombre || !descripcion || !categoriaId || cantidadDisponible == null || !unidadDeMedida || precioUnitario == null) {
       return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
 
     const inventario = new Inventario({
-      nombre, descripcion, categoria,
-      cantidadDisponible, unidadDeMedida,
+      nombre,
+      descripcion,
+      categoria: categoriaId,
+      marca: (marca || '').trim(), // ← NUEVO (opcional)
+      cantidadDisponible,
+      unidadDeMedida,
       precioUnitario,
       fechaIngreso: fechaIngreso || Date.now()
     });
 
     await inventario.save();
-    res.status(201).json(inventario);
+    const populated = await Inventario.findById(inventario._id).populate('categoria', 'nombre prefijo tipo');
+    res.status(201).json(populated);
   } catch (error) {
-    console.error("Error al crear producto:", error.message);
+    console.error("Error al crear insumo:", error.message);
     res.status(500).json({ message: error.message });
   }
 };
@@ -34,12 +41,14 @@ exports.getProductos = async (req, res) => {
     const where = q
       ? { $or: [
           { nombre:      { $regex: q, $options: 'i' } },
-          { categoria:   { $regex: q, $options: 'i' } },
-          { codigo:      { $regex: q, $options: 'i' } },
           { descripcion: { $regex: q, $options: 'i' } },
+          { codigo:      { $regex: q, $options: 'i' } },
+          { marca:       { $regex: q, $options: 'i' } }, // ← NUEVO
         ] }
       : {};
-    const productos = await Inventario.find(where).lean();
+    const productos = await Inventario.find(where)
+      .populate('categoria', 'nombre prefijo tipo')
+      .lean();
     res.status(200).json(productos);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -71,18 +80,30 @@ exports.updateProducto = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      nombre, descripcion, categoria,
+      nombre, descripcion, categoriaId,
+      marca, // ← NUEVO
       cantidadDisponible, unidadDeMedida,
       precioUnitario, fechaIngreso
     } = req.body;
 
+    const update = {
+      nombre,
+      descripcion,
+      marca: (marca ?? undefined), // ← NUEVO (solo setea si vino en body)
+      cantidadDisponible,
+      unidadDeMedida,
+      precioUnitario,
+      fechaIngreso
+    };
+    if (categoriaId) update.categoria = categoriaId;
+
     const producto = await Inventario.findByIdAndUpdate(
       id,
-      { nombre, descripcion, categoria, cantidadDisponible, unidadDeMedida, precioUnitario, fechaIngreso },
+      update,
       { new: true, runValidators: true }
-    );
+    ).populate('categoria', 'nombre prefijo tipo');
 
-    if (!producto) return res.status(404).json({ message: 'Producto no encontrado' });
+    if (!producto) return res.status(404).json({ message: 'Insumo no encontrado' });
     res.status(200).json(producto);
   } catch (error) {
     res.status(500).json({ message: error.message });

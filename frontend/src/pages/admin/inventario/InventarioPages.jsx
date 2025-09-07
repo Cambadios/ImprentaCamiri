@@ -1,99 +1,84 @@
-import React, { useState, useEffect } from "react";
-import InventarioList from "./InventarioList";
-import InventarioForm from "./InventarioForm";
-import { apiFetch } from "../../../api/http";
-import { InputText } from "primereact/inputtext";
-import { Button } from "primereact/button";
-import { downloadFile } from "../../../api/download";
+// src/pages/Inventario/InventarioPage.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import InventarioList from './InventarioList';
+import InventarioForm from './InventarioForm';
+import { apiFetch } from '../../../api/http';
+import { InputText } from 'primereact/inputtext';
+import { Button } from 'primereact/button';
+import { downloadFile } from '../../../api/download';
 
 const InventarioPage = () => {
   const [inventarios, setInventarios] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [inventarioEdit, setInventarioEdit] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [q] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const debounceRef = useRef();
 
-  // Obtener lista
+  // Cargar lista inicial
   useEffect(() => {
-    const fetchInventarios = async () => {
-      try {
-        const response = await apiFetch("/inventario");
-        const data = await response.json();
-        setInventarios(data);
-      } catch (error) {
-        console.error("Error al obtener inventarios", error);
-      }
-    };
-    fetchInventarios();
+    fetchInventarios('');
   }, []);
 
-  // Función de búsqueda
-  const filteredInventarios = inventarios.filter(
-    (inventario) =>
-      inventario.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inventario.codigo?.includes(searchTerm)
-  );
+  // Búsqueda con debounce al backend (?q=)
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchInventarios(searchTerm);
+    }, 350);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchTerm]);
+
+  const fetchInventarios = async (q) => {
+    try {
+      const path = q ? `/inventario?q=${encodeURIComponent(q)}` : '/inventario';
+      const response = await apiFetch(path);
+      const data = await response.json();
+      setInventarios(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error al obtener inventarios', error);
+    }
+  };
 
   const handleEdit = (inventario) => {
-    setInventarioEdit(inventario); // Este es el punto donde establecemos el producto a editar
+    setInventarioEdit(inventario);
     setModalVisible(true);
   };
 
   const handleDelete = async (id) => {
     try {
-      await apiFetch(`/inventario/${id}`, { method: "DELETE" });
-      setInventarios((prevInventarios) =>
-        prevInventarios.filter((inventario) => inventario._id !== id)
-      );
+      await apiFetch(`/inventario/${id}`, { method: 'DELETE' });
+      setInventarios(prev => prev.filter(i => i._id !== id));
     } catch (error) {
-      console.error("Error al eliminar insumo", error);
+      console.error('Error al eliminar insumo', error);
     }
   };
 
-  const handleSave = async (inventario) => {
+  const handleSave = async (payload) => {
     try {
       if (inventarioEdit) {
-        // Editar producto
+        // Editar (PUT) — el backend acepta marca opcional y categoriaId opcional
         const response = await apiFetch(`/inventario/${inventarioEdit._id}`, {
-          method: "PUT",
-          body: JSON.stringify(inventario),
-          headers: { "Content-Type": "application/json" }, // Asegúrate de que el encabezado esté configurado correctamente
+          method: 'PUT',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' },
         });
-        const updatedInventario = await response.json();
-        setInventarios((prev) =>
-          prev.map((i) =>
-            i._id === updatedInventario._id ? updatedInventario : i
-          )
-        );
+        const updated = await response.json();
+        setInventarios(prev => prev.map(i => (i._id === updated._id ? updated : i)));
       } else {
-        // Crear producto
-        const newInventario = {
-          nombre: inventario.nombre || "",
-          descripcion: inventario.descripcion || "",
-          categoria: inventario.categoria || "",
-          cantidadDisponible: inventario.cantidadDisponible || 0,
-          unidadDeMedida: inventario.unidadDeMedida || "",
-          precioUnitario: inventario.precioUnitario || 0,
-          fechaIngreso: inventario.fechaIngreso || new Date(),
-        };
-
-        const response = await apiFetch("/inventario", {
-          method: "POST",
-          body: JSON.stringify(newInventario),
-          headers: { "Content-Type": "application/json" }, // Asegúrate de que el encabezado esté configurado correctamente
+        // Crear (POST) — el backend espera categoriaId (no "categoria")
+        const response = await apiFetch('/inventario', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' },
         });
-
-        if (!response.ok) {
-          throw new Error("Error al crear el insumo");
-        }
-
-        const createdInventario = await response.json();
-        setInventarios((prev) => [...prev, createdInventario]);
+        if (!response.ok) throw new Error('Error al crear el insumo');
+        const created = await response.json();
+        setInventarios(prev => [created, ...prev]); // al inicio
       }
       setModalVisible(false);
-      setInventarioEdit(null); // Limpiar estado de edición después de guardar
+      setInventarioEdit(null);
     } catch (error) {
-      console.error("Error al guardar el insumo", error);
+      console.error('Error al guardar el insumo', error);
     }
   };
 
@@ -105,9 +90,7 @@ const InventarioPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-semibold text-gray-700">
-          Lista de Insumos
-        </h2>
+        <h2 className="text-3xl font-semibold text-gray-700">Lista de Insumos</h2>
         <div className="space-x-4">
           <Button
             label="Nuevo Insumo"
@@ -120,27 +103,30 @@ const InventarioPage = () => {
             icon="pi pi-download"
             onClick={() =>
               downloadFile(
-                `/api/export/inventario.pdf?q=${encodeURIComponent(q || "")}`,
-                "Listado de Insumos.pdf"
+                `/api/export/inventario.pdf?q=${encodeURIComponent(searchTerm || '')}`,
+                'Listado de Insumos.pdf'
               )
             }
           />
         </div>
       </div>
 
-      {/* Barra de búsqueda */}
+      {/* Barra de búsqueda (servidor) */}
       <div className="mb-4">
-        <InputText
-          type="text"
-          placeholder="Buscar por nombre o código"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full"
-        />
+        <span className="p-input-icon-left w-full">
+          <i className="pi pi-search" />
+          <InputText
+            type="text"
+            placeholder="Buscar por nombre, código, marca o descripción"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </span>
       </div>
 
       <InventarioList
-        inventarios={filteredInventarios}
+        inventarios={inventarios}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
@@ -149,7 +135,7 @@ const InventarioPage = () => {
         visible={isModalVisible}
         onHide={handleModalHide}
         onSave={handleSave}
-        productoEdit={inventarioEdit} // Aseguramos que el inventario a editar se pasa correctamente al formulario
+        productoEdit={inventarioEdit}
       />
     </div>
   );

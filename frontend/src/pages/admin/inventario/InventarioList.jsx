@@ -1,29 +1,22 @@
+// src/pages/Inventario/InventarioList.jsx
 import React, { useState } from 'react';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
-import { Tag } from 'primereact/tag'; // <-- chip de estado
 
 const InventarioList = ({ inventarios, onEdit, onDelete }) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [productoToDelete, setProductoToDelete] = useState(null);
 
-  // Fecha legible
   const formatDate = (date) => {
+    if (!date) return '';
     const d = new Date(date);
     return d.toLocaleDateString('es-ES', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
     });
   };
 
-
-
-
-  // Nombre + descripción (descripción en gris, truncada a 2 líneas)
   const nombreBody = (row) => {
     const desc = row.descripcion || '';
     return (
@@ -33,12 +26,7 @@ const InventarioList = ({ inventarios, onEdit, onDelete }) => {
           <span
             title={desc}
             className="text-gray-600 text-sm"
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
+            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
           >
             {desc}
           </span>
@@ -47,22 +35,13 @@ const InventarioList = ({ inventarios, onEdit, onDelete }) => {
     );
   };
 
-  const openDeleteModal = (producto) => {
-    setProductoToDelete(producto);
-    setModalVisible(true);
-  };
+  const categoriaBody = (row) => row?.categoria?.nombre || '-';
+  const marcaBody = (row) => row?.marca || '—';
 
-  const closeDeleteModal = () => {
-    setModalVisible(false);
-    setProductoToDelete(null);
-  };
+  const openDeleteModal = (producto) => { setProductoToDelete(producto); setModalVisible(true); };
+  const closeDeleteModal = () => { setModalVisible(false); setProductoToDelete(null); };
+  const confirmDelete = () => { if (productoToDelete) onDelete(productoToDelete._id); closeDeleteModal(); };
 
-  const confirmDelete = () => {
-    if (productoToDelete) onDelete(productoToDelete._id);
-    closeDeleteModal();
-  };
-
-  // Precio formateado (opcional)
   const precioBody = (row) =>
     typeof row.precioUnitario === 'number'
       ? row.precioUnitario.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })
@@ -70,16 +49,15 @@ const InventarioList = ({ inventarios, onEdit, onDelete }) => {
 
   return (
     <div className="card">
-      <DataTable value={inventarios} paginator rows={10} className="p-datatable-sm">
-        <Column field="codigo" header="Código" />
-        <Column header="Nombre / Descripción" body={nombreBody} />
-        <Column field="categoria" header="Categoría" />
-        <Column field="cantidadDisponible" header="Cantidad Disponible" />
-        <Column field="unidadDeMedida" header="Unidad de Medida" />
-        <Column header="Precio Unitario" body={precioBody} />
-        <Column field="fechaIngreso" header="Fecha de Ingreso" body={(r) => formatDate(r.fechaIngreso)} />
-        {/* Nueva columna de ESTADO por colores */}
-
+      <DataTable value={inventarios} paginator rows={10} className="p-datatable-sm" responsiveLayout="scroll">
+        <Column field="codigo" header="Código" style={{ minWidth: 110 }} />
+        <Column header="Nombre / Descripción" body={nombreBody} style={{ minWidth: 260 }} />
+        <Column header="Categoría" body={categoriaBody} style={{ minWidth: 150 }} />
+        <Column header="Marca" body={marcaBody} style={{ minWidth: 130 }} />
+        <Column field="cantidadDisponible" header="Cantidad" style={{ minWidth: 110 }} />
+        <Column field="unidadDeMedida" header="Unidad" style={{ minWidth: 110 }} />
+        <Column header="Precio Unitario" body={precioBody} style={{ minWidth: 150 }} />
+        <Column header="Ingreso" body={(r) => formatDate(r.fechaIngreso)} style={{ minWidth: 140 }} />
         <Column
           header="Acciones"
           body={(rowData) => (
@@ -88,10 +66,10 @@ const InventarioList = ({ inventarios, onEdit, onDelete }) => {
               <Button icon="pi pi-trash" className="p-button-danger" onClick={() => openDeleteModal(rowData)} />
             </div>
           )}
+          style={{ minWidth: 130 }}
         />
       </DataTable>
 
-      {/* Modal de confirmación de eliminación */}
       <Dialog
         visible={isModalVisible}
         style={{ width: '400px' }}

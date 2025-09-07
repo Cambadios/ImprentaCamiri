@@ -5,6 +5,7 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+router.get('/kpis', auth, pedidoController.kpisPedidos);
 router.post('/', auth, pedidoController.crearPedido);
 router.get('/', auth, pedidoController.listarPedidos);
 router.get('/:id', auth, pedidoController.getPedido);

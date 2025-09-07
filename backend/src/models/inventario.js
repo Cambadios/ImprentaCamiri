@@ -1,11 +1,13 @@
 // models/inventario.js
 const mongoose = require('mongoose');
+const { generarCodigoPorCategoria } = require('../utils/generarCodigo');
 
 const inventarioSchema = new mongoose.Schema({
-  codigo:             { type: String, unique: true, sparse: true },
+  codigo:             { type: String, unique: true, sparse: true, index: true },
   nombre:             { type: String, required: true, trim: true, index: true },
   descripcion:        { type: String, required: true, trim: true },
-  categoria:          { type: String, required: true, trim: true, index: true },
+  categoria:          { type: mongoose.Schema.Types.ObjectId, ref: 'Categoria', required: true, index: true },
+  marca:              { type: String, trim: true, index: true, default: '' },   // ← NUEVO
   cantidadDisponible: { type: Number, required: true, min: 0 },
   unidadDeMedida:     { type: String, required: true, trim: true },
   precioUnitario:     { type: Number, required: true, min: 0 },
@@ -13,18 +15,19 @@ const inventarioSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 inventarioSchema.pre('save', async function (next) {
-  if (!this.codigo) {
-    let count = await mongoose.model('Inventario').countDocuments();
-    let numero = (count + 1).toString().padStart(4, '0');
-    let codigoGenerado = `INV-${numero}`;
-    while (await mongoose.model('Inventario').exists({ codigo: codigoGenerado })) {
-      count++;
-      numero = (count + 1).toString().padStart(4, '0');
-      codigoGenerado = `INV-${numero}`;
-    }
-    this.codigo = codigoGenerado;
+  try {
+    if (this.codigo) return next();
+
+    const Categoria = mongoose.model('Categoria');
+    const cat = await Categoria.findById(this.categoria).lean();
+    if (!cat) throw new Error('Categoría de insumo no encontrada');
+    if (cat.tipo !== 'insumo') throw new Error('La categoría asignada no es de tipo insumo');
+
+    this.codigo = await generarCodigoPorCategoria({ tipo: 'insumo', prefijo: cat.prefijo });
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
 });
 
 module.exports = mongoose.model('Inventario', inventarioSchema);

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/Inventario/InventarioForm.jsx
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
@@ -6,13 +7,15 @@ import { Button } from 'primereact/button';
 import { Calendar } from 'primereact/calendar';
 import { Dropdown } from 'primereact/dropdown';
 import { InputTextarea } from 'primereact/inputtextarea';
+import { apiFetch } from '../../../api/http';
 
 const MAX_WORDS = 100;
 
 const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [categoria, setCategoria] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');   // ← ahora guardamos el _id
+  const [marca, setMarca] = useState('');              // ← NUEVO
   const [cantidadDisponible, setCantidadDisponible] = useState(0);
   const [unidadDeMedida, setUnidadDeMedida] = useState('');
   const [precioUnitario, setPrecioUnitario] = useState(0);
@@ -20,35 +23,49 @@ const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
   const [errors, setErrors] = useState({});
   const [descWords, setDescWords] = useState(0);
 
-  const categorias = [
-    { label: 'Papelería', value: 'Papeleria' },
-    { label: 'Tintas', value: 'Tintas' },
-    { label: 'Cortes', value: 'Cortes' },
-    { label: 'Otros', value: 'Otros' },
-  ];
-
-  const unidadesDeMedida = [
+  const [categorias, setCategorias] = useState([]);
+  const unidadesDeMedida = useMemo(() => ([
     { label: 'Kilogramo', value: 'Kilogramos' },
     { label: 'Litro', value: 'Litros' },
     { label: 'Unidad', value: 'Unidad' },
     { label: 'Caja', value: 'Caja' },
     { label: 'Rollo', value: 'Rollo' },
-  ];
+  ]), []);
+
+  // Cargar categorías de tipo insumo desde el backend
+  useEffect(() => {
+    (async () => {
+      try {
+        // Si tu endpoint es otro, cámbialo aquí:
+        const resp = await apiFetch('/categorias?tipo=insumo');
+        const data = await resp.json();
+        const opts = (Array.isArray(data) ? data : []).map(c => ({
+          label: `${c.prefijo || ''} ${c.nombre}`.trim(),
+          value: c._id,
+          tipo: c.tipo,
+        }));
+        setCategorias(opts);
+      } catch (e) {
+        console.error('Error cargando categorías', e);
+        setCategorias([]);
+      }
+    })();
+  }, []);
 
   // Helper para contar palabras
   const countWords = (text) =>
     text.trim().length === 0
       ? 0
-      : text
-          .trim()
-          .split(/\s+/) // separa por espacios múltiples
-          .filter(Boolean).length;
+      : text.trim().split(/\s+/).filter(Boolean).length;
 
   useEffect(() => {
     if (productoEdit) {
       setNombre(productoEdit.nombre ?? '');
       setDescripcion(productoEdit.descripcion ?? '');
-      setCategoria(productoEdit.categoria ?? '');
+      // productoEdit.categoria puede venir populado (objeto) o como id
+      const cat = productoEdit.categoria;
+      setCategoriaId(typeof cat === 'object' && cat?._id ? cat._id : (cat || ''));
+      setMarca(productoEdit.marca ?? ''); // ← NUEVO
       setCantidadDisponible(productoEdit.cantidadDisponible ?? 0);
       setUnidadDeMedida(productoEdit.unidadDeMedida ?? '');
       setPrecioUnitario(productoEdit.precioUnitario ?? 0);
@@ -57,11 +74,11 @@ const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
     } else {
       setNombre('');
       setDescripcion('');
-      setCategoria('');
+      setCategoriaId('');
+      setMarca(''); // ← NUEVO
       setCantidadDisponible(0);
       setUnidadDeMedida('');
       setPrecioUnitario(0);
-      // Fecha actual por defecto
       setFechaIngreso(new Date());
       setDescWords(0);
     }
@@ -70,7 +87,6 @@ const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
   const onDescripcionChange = (value) => {
     const words = value.trim() ? value.trim().split(/\s+/) : [];
     if (words.length > MAX_WORDS) {
-      // Limitar a 100 palabras
       const limited = words.slice(0, MAX_WORDS).join(' ');
       setDescripcion(limited);
       setDescWords(MAX_WORDS);
@@ -85,10 +101,10 @@ const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
     if (!nombre) newErrors.nombre = 'El nombre es obligatorio';
     if (!descripcion) newErrors.descripcion = 'La descripción es obligatoria';
     if (descWords > MAX_WORDS) newErrors.descripcion = `Máximo ${MAX_WORDS} palabras`;
-    if (!categoria) newErrors.categoria = 'La categoría es obligatoria';
+    if (!categoriaId) newErrors.categoriaId = 'La categoría es obligatoria';
     if (!unidadDeMedida) newErrors.unidadDeMedida = 'La unidad de medida es obligatoria';
-    if (cantidadDisponible <= 0) newErrors.cantidadDisponible = 'La cantidad disponible debe ser mayor que 0';
-    if (precioUnitario <= 0) newErrors.precioUnitario = 'El precio unitario debe ser mayor que 0';
+    if (Number(cantidadDisponible) <= 0) newErrors.cantidadDisponible = 'La cantidad disponible debe ser mayor que 0';
+    if (Number(precioUnitario) <= 0) newErrors.precioUnitario = 'El precio unitario debe ser mayor que 0';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -98,7 +114,8 @@ const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
     const producto = {
       nombre,
       descripcion,
-      categoria,
+      categoriaId,          // ← clave que espera el backend
+      marca: marca?.trim(), // ← NUEVO (opcional)
       cantidadDisponible,
       unidadDeMedida,
       precioUnitario,
@@ -110,9 +127,9 @@ const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
 
   return (
     <Dialog
-      header={productoEdit ? "Editar Insumo" : "Nuevo Insumo"}
+      header={productoEdit ? 'Editar Insumo' : 'Nuevo Insumo'}
       visible={visible}
-      style={{ width: '520px' }}
+      style={{ width: '560px' }}
       onHide={() => { onHide(); setErrors({}); }}
     >
       <div className="p-fluid space-y-4">
@@ -127,7 +144,19 @@ const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
           {errors.nombre && <small className="p-error text-red-600">{errors.nombre}</small>}
         </div>
 
-        {/* Descripción: Textarea con contador y límite */}
+        {/* Marca (opcional) */}
+        <div className="p-field">
+          <label htmlFor="marca" className="block text-gray-700 font-semibold">Marca (opcional)</label>
+          <InputText
+            id="marca"
+            value={marca}
+            onChange={(e) => setMarca(e.target.value)}
+            placeholder="Ej: HP, Epson, 3M..."
+            className="w-full p-inputtext-sm border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          />
+        </div>
+
+        {/* Descripción con contador */}
         <div className="p-field">
           <div className="flex items-center justify-between">
             <label htmlFor="descripcion" className="block text-gray-700 font-semibold">Descripción</label>
@@ -143,23 +172,23 @@ const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
             rows={3}
             placeholder="Describe el insumo (máx. 100 palabras)"
             className={`w-full ${errors.descripcion ? 'p-invalid' : ''} border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400`}
-            style={{ resize: 'vertical' }} // extensible
+            style={{ resize: 'vertical' }}
           />
           {errors.descripcion && <small className="p-error text-red-600">{errors.descripcion}</small>}
         </div>
 
-        {/* Categoría */}
+        {/* Categoría (desde API, solo insumos) */}
         <div className="p-field">
-          <label htmlFor="categoria" className="block text-gray-700 font-semibold">Categoría</label>
+          <label htmlFor="categoriaId" className="block text-gray-700 font-semibold">Categoría</label>
           <Dropdown
-            id="categoria"
-            value={categoria}
+            id="categoriaId"
+            value={categoriaId}
             options={categorias}
-            onChange={(e) => setCategoria(e.value)}
-            placeholder="Seleccionar categoría"
-            className={`w-full ${errors.categoria ? 'p-invalid' : ''} border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400`}
+            onChange={(e) => setCategoriaId(e.value)}
+            placeholder="Seleccionar categoría (insumo)"
+            className={`w-full ${errors.categoriaId ? 'p-invalid' : ''} border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400`}
           />
-          {errors.categoria && <small className="p-error text-red-600">{errors.categoria}</small>}
+          {errors.categoriaId && <small className="p-error text-red-600">{errors.categoriaId}</small>}
         </div>
 
         {/* Unidad de medida */}
@@ -203,7 +232,6 @@ const InventarioForm = ({ visible, onHide, onSave, productoEdit }) => {
           {errors.precioUnitario && <small className="p-error text-red-600">{errors.precioUnitario}</small>}
         </div>
 
-        {/* Fecha de ingreso: por defecto hoy */}
         <div className="p-field">
           <label htmlFor="fechaIngreso" className="block text-gray-700 font-semibold">Fecha de Ingreso</label>
           <Calendar

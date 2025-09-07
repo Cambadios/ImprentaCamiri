@@ -10,7 +10,8 @@ const productoRoutes = require('./productoRoutes');
 const reporteRoutes = require('./reportesRoutes');
 const dashboardRoutes = require('./dashboardsRoutes')
 const exportRoutes = require('./exportRoutes');
-const dashboardRoutesMaquinaria = require('./dashboardRoutesMaquinaria')
+const dashboardRoutesMaquinaria = require('./dashboardRoutesMaquinaria');
+const categoriaRoutes = require('./categoriaRoutes');
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.use('/reportes', reporteRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/export', exportRoutes);
 router.use('/dashboardMaquinaria', dashboardRoutesMaquinaria);
-
+router.use('/categorias', categoriaRoutes);
 
 // Reportes (si adentro define '/reporte-pdf')
 router.use(reporteRoutes);

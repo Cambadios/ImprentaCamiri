@@ -9,5 +9,7 @@ router.get('/inventario.pdf', auth, ctrl.exportInventario); // admite ?q=...
 router.get('/pedidos.pdf',    auth, ctrl.exportPedidos);    // admite ?q=&estado=
 router.get('/productos.pdf',  auth, ctrl.exportProductos);
 router.get('/usuarios.pdf',   auth, ctrl.exportUsuarios);
+router.get('/categorias.pdf',  ctrl.exportCategorias);
+
 
 module.exports = router;

@@ -8,76 +8,59 @@ const ProductoList = ({ productos, onEdit, onDelete }) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [productoToDelete, setProductoToDelete] = useState(null);
 
-  const openDeleteModal = (producto) => {
-    setProductoToDelete(producto);
-    setModalVisible(true);
-  };
+  const openDeleteModal = (producto) => { setProductoToDelete(producto); setModalVisible(true); };
+  const closeDeleteModal = () => { setModalVisible(false); setProductoToDelete(null); };
+  const confirmDelete = () => { if (productoToDelete) onDelete(productoToDelete._id); closeDeleteModal(); };
 
-  const closeDeleteModal = () => {
-    setModalVisible(false);
-    setProductoToDelete(null);
-  };
+  const precioBody = (row) =>
+    typeof row.precioUnitario === 'number'
+      ? row.precioUnitario.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })
+      : row.precioUnitario;
 
-  const confirmDelete = () => {
-    if (productoToDelete) {
-      onDelete(productoToDelete._id);
+  const categoriaBody = (row) => row?.categoria?.nombre || '—';
+
+  const materialesBody = (row) => {
+    if (!row.materiales || row.materiales.length === 0) {
+      return <span className="text-gray-400">Sin materiales</span>;
     }
-    closeDeleteModal();
+    return (
+      <div className="space-y-1">
+        {row.materiales.map((mat, idx) => {
+          if (!mat.material) return null;
+          const nombre = mat.material.nombre || 'Material';
+          const unidad = mat.material.unidadDeMedida || 'unidad'; // **ojo**: unidadDeMedida (Inventario)
+          const cant = mat.cantidadPorUnidad || 0;
+          return (
+            <div key={idx} className="flex items-center gap-1 text-sm">
+              <span className="font-medium">{nombre}:</span>
+              <span className="text-blue-700">
+                {cant} {cant === 1 ? unidad : `${unidad}${unidad.endsWith('s') ? '' : 's'}`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
     <div className="card">
-      <DataTable value={productos} paginator rows={10} header="Lista de Productos">
-        <Column field="nombre" header="Nombre" />
-        <Column field="descripcion" header="Descripción" />
-        <Column field="precioUnitario" header="Precio" />
-        
-        <Column
-          header="Materiales"
-          body={(rowData) => {
-            if (!rowData.materiales || rowData.materiales.length === 0) {
-              return <span className="text-gray-400">Sin materiales</span>;
-            }
-            
-            return (
-              <div className="space-y-1">
-                {rowData.materiales.map((mat, index) => {
-                  if (!mat.material) {
-                    return null;
-                  }
-                  const nombreMaterial = mat.material.nombre || 'Material sin nombre';
-                  const cantidad = mat.cantidadPorUnidad || 0;
-                  const unidad = mat.material.unidadDeMedida || 'unidad';
-                  
-                  return (
-                    <div key={index} className="flex items-center gap-1 text-sm">
-                      <span className="font-medium">{nombreMaterial}:</span>
-                      <span className="text-blue-600">
-                        {cantidad} {cantidad === 1 ? unidad : `${unidad}${unidad.endsWith('s') ? '' : 's'}`}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          }}
-        />
-        
+      <DataTable value={productos} paginator rows={10} header="Lista de Productos" className="p-datatable-sm" responsiveLayout="scroll">
+        <Column field="codigo" header="Código" style={{ minWidth: 120 }} />
+        <Column field="nombre" header="Nombre" style={{ minWidth: 200 }} />
+        <Column field="descripcion" header="Descripción" style={{ minWidth: 260 }} />
+        <Column header="Categoría" body={categoriaBody} style={{ minWidth: 160 }} />
+        <Column header="Precio" body={precioBody} style={{ minWidth: 140 }} />
+        <Column header="Materiales" body={materialesBody} style={{ minWidth: 280 }} />
         <Column
           header="Acciones"
           body={(rowData) => (
             <div className="flex gap-2">
-              <Button
-                icon="pi pi-pencil"
-                onClick={() => onEdit(rowData)}
-              />
-              <Button
-                icon="pi pi-trash"
-                className="p-button-danger"
-                onClick={() => openDeleteModal(rowData)}
-              />
+              <Button icon="pi pi-pencil" onClick={() => onEdit(rowData)} />
+              <Button icon="pi pi-trash" className="p-button-danger" onClick={() => openDeleteModal(rowData)} />
             </div>
           )}
+          style={{ minWidth: 140 }}
         />
       </DataTable>
 

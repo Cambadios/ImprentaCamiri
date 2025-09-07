@@ -277,3 +277,64 @@ exports.cancelarPedido = async (req, res, next) => {
     next(e);
   }
 };
+// --- KPIs de Pedidos: counts y montos por estado ---
+exports.kpisPedidos = async (req, res, next) => {
+  try {
+    // Filtros opcionales ?from=YYYY-MM-DD&to=YYYY-MM-DD
+    const { from, to } = req.query;
+    const where = {};
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.$gte = new Date(`${from}T00:00:00.000Z`);
+      if (to)   where.createdAt.$lte = new Date(`${to}T23:59:59.999Z`);
+    }
+
+    const [porEstado, totales] = await Promise.all([
+      // Conteos por estado
+      Pedido.aggregate([
+        { $match: where },
+        { $group: { _id: '$estado', count: { $sum: 1 } } }
+      ]),
+      // Totales de dinero
+      Pedido.aggregate([
+        { $match: where },
+        {
+          $group: {
+            _id: null,
+            totalPedidos: { $sum: 1 },
+            totalMonto: { $sum: { $ifNull: ['$total', 0] } },
+            totalPagado: { $sum: { $ifNull: ['$pagado', 0] } },
+            totalSaldo:  { $sum: { $ifNull: ['$saldo', 0] } },
+          }
+        }
+      ])
+    ]);
+
+    const countMap = porEstado.reduce((acc, r) => {
+      acc[r._id || 'Desconocido'] = r.count;
+      return acc;
+    }, {});
+
+    const t = totales[0] || { totalPedidos: 0, totalMonto: 0, totalPagado: 0, totalSaldo: 0 };
+
+    // Mapeo a tus nombres:
+    // - "realizados"   => Entregado
+    // - "porHacer"     => Pendiente
+    // - "enEspera"     => En proceso
+    // - "cancelados"   => Cancelado
+    const payload = {
+      realizados: countMap['Entregado'] || 0,
+      porHacer:   countMap['Pendiente'] || 0,
+      enEspera:   countMap['En proceso'] || 0,
+      cancelados: countMap['Cancelado'] || 0,
+
+      totalPedidos: t.totalPedidos || 0,
+      totalMonto:   t.totalMonto   || 0,
+      totalPagado:  t.totalPagado  || 0,
+      totalSaldo:   t.totalSaldo   || 0,
+    };
+
+    res.json(payload);
+  } catch (e) { next(e); }
+};
+

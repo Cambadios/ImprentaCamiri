@@ -19,13 +19,13 @@ export default function AdminTabs() {
 
   const tabs = useMemo(
     () => [
-      { id: "dashboard", label: "Dashboard", icon: "📊", path: "dashboard" },
+      { id: "dashboard", label: "Reportes", icon: "📊", path: "dashboard" },
       { id: "clientes", label: "Clientes", icon: "🧑‍💼", path: "clientes" },
-      { id: "productos", label: "Productos", icon: "🏷️", path: "productos" },
+      { id: "productos", label: "Productos", icon: "🎁", path: "productos" },
       { id: "insumos", label: "Insumos", icon: "📦", path: "inventario" },
       { id: "pedidos", label: "Pedidos", icon: "🧾", path: "pedidos" },
       { id: "usuarios", label: "Usuarios", icon: "👤", path: "usuarios" },
-      { id: "reportes", label: "Reportes", icon: "🧩", path: "reportes" },
+      { id: "categorias", label: "Categorias", icon: "🗂️", path: "categorias" },
     ],
     []
   );

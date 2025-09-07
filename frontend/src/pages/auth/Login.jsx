@@ -173,8 +173,8 @@ export default function Login() {
                 placeholder="••••••••"
                 feedback={false}
                 toggleMask
-                className="w-full" // contenedor ocupa todo
-                inputClassName="w-full p-3 border border-yellow-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                className="w-full block" // contenedor ocupa todo
+                inputClassName="w-full block p-3 border border-yellow-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
               />
             </div>
             {touched.contrasena && errors.contrasena && (

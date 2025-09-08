@@ -12,6 +12,8 @@ router.get('/:id', auth, pedidoController.getPedido);
 router.patch('/:id', auth, pedidoController.actualizarPedido);
 router.post('/:id/pagos', auth, pedidoController.registrarPago);
 router.put('/:id/entregar', auth, pedidoController.entregarPedido);
-router.delete('/:id', auth, pedidoController.cancelarPedido);
+
+// DELETE definitivo (sin reponer si está Entregado o Cancelado)
+router.delete('/:id', auth, pedidoController.eliminarPedido);
 
 module.exports = router;

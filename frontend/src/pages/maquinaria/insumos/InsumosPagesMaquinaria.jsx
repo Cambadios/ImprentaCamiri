@@ -24,7 +24,6 @@ export default function InsumosPagesMaquinaria() {
       setLoading(true);
       const resp = await apiFetch("/inventario");
       const data = await resp.json();
-      // Soporta varios formatos: {data: [...]}, [...], {inventarios:[...]}
       const arr =
         Array.isArray(data?.data)
           ? data.data
@@ -52,16 +51,27 @@ export default function InsumosPagesMaquinaria() {
   }, []);
 
   const s = (v) => (v == null ? "" : String(v));
+  const catStr = (cat) => {
+    if (!cat) return "";
+    if (typeof cat === "string") return cat;
+    // objeto poblado
+    const nombre = s(cat?.nombre);
+    const prefijo = s(cat?.prefijo);
+    return `${nombre} ${prefijo}`.trim();
+  };
+
   const filtered = useMemo(() => {
     if (!debounced) return insumos;
     return (insumos ?? []).filter((i) => {
       const campos = [
         s(i?.nombre),
         s(i?.descripcion),
-        s(i?.categoria),
+        catStr(i?.categoria),   // ← usa nombre/prefijo si viene poblado
         s(i?.codigo),
         s(i?.unidadDeMedida),
-      ].map((x) => x.toLowerCase());
+        s(i?.marca),            // ya que agregaste marca
+      ]
+        .map((x) => x.toLowerCase());
       return campos.some((x) => x.includes(debounced));
     });
   }, [insumos, debounced]);

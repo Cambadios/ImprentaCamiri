@@ -1,4 +1,3 @@
-// src/components/PedidoPage.jsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import PedidoList from "./PedidosList";
 import PedidoForm from "./PedidosForm";
@@ -6,8 +5,11 @@ import PedidoKPICards from "../../../components/dashboard/PedidoKPICards";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { Dropdown } from "primereact/dropdown";
 import { apiFetch } from "../../../api/http";
 import { downloadFile } from "../../../api/download";
+
+const ESTADOS = ["Pendiente", "En proceso", "Entregado", "Cancelado"];
 
 const normalizeDigits = (v) => (v ? String(v).replace(/\D+/g, "") : "");
 const safeStr = (v) => (v == null ? "" : String(v));
@@ -19,16 +21,15 @@ const PedidoPage = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [pedidoEdit, setPedidoEdit] = useState(null);
   const [loading, setLoading] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState(""); // "" = Todos
   const toast = useRef(null);
 
-  // Filtros (solo los anteriores)
-  const [estado] = useState("");
-  const [q] = useState("");
-
+  // Querystring para exportar respetando filtros reales
   const qs = new URLSearchParams();
-  if (estado) qs.set("estado", estado);
-  if (q) qs.set("q", q);
+  if (estadoFilter) qs.set("estado", estadoFilter);
+  if (searchTerm) qs.set("q", searchTerm);
 
   // ---- helpers ----
   const parseResponse = async (resp) => {
@@ -108,29 +109,40 @@ const PedidoPage = () => {
     fetchProductos();
   }, []);
 
-  // Filtro por nombre completo o teléfono
+  // Filtro por nombre completo, teléfono y estado
   const filteredPedidos = useMemo(() => {
     const term = safeStr(searchTerm).toLowerCase().trim();
     const termDigits = normalizeDigits(term);
-    if (!term) return pedidos;
+
     return (pedidos ?? []).filter((p) => {
       const nom = safeStr(p?.cliente?.nombre).toLowerCase();
       const ape = safeStr(p?.cliente?.apellido).toLowerCase();
       const full = `${nom} ${ape}`.trim();
       const tel = normalizeDigits(safeStr(p?.cliente?.telefono));
-      return full.includes(term) || (termDigits && tel.includes(termDigits));
+      const matchText =
+        !term || full.includes(term) || (termDigits && tel.includes(termDigits));
+
+      const matchEstado =
+        !estadoFilter ||
+        safeStr(p?.estado).toLowerCase() === safeStr(estadoFilter).toLowerCase();
+
+      return matchText && matchEstado;
     });
-  }, [pedidos, searchTerm]);
+  }, [pedidos, searchTerm, estadoFilter]);
 
   const handleEdit = (pedido) => {
     setPedidoEdit(pedido);
     setModalVisible(true);
   };
 
+  // Eliminación: maneja 204 de backend y sólo refresca la lista local al éxito
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Eliminar este pedido?")) return;
     try {
-      await apiFetch(`/pedidos/${id}`, { method: "DELETE" });
+      const resp = await apiFetch(`/pedidos/${id}`, { method: "DELETE" });
+      if (!resp || !resp.ok) {
+        const { status } = resp || {};
+        throw new Error(status ? `HTTP ${status}` : "Sin respuesta");
+      }
       setPedidos((prev) => prev.filter((p) => p._id !== id));
       toast.current?.show({
         severity: "success",
@@ -148,12 +160,13 @@ const PedidoPage = () => {
     }
   };
 
+  // onSave se usa para CREAR o EDITAR (el Form espera una Promise)
   const handleSave = async (payload) => {
     try {
       setLoading(true);
 
       if (pedidoEdit) {
-        // EDITAR (estado / fechaEntrega)
+        // EDITAR: sólo enviamos estado y fechaEntrega (según backend)
         const resp = await apiFetch(`/pedidos/${pedidoEdit._id}`, {
           method: "PATCH",
           body: JSON.stringify({
@@ -170,7 +183,7 @@ const PedidoPage = () => {
             detail: data?.message || "Error desconocido",
             life: 6000,
           });
-          return;
+          return false;
         }
 
         setPedidos((prev) => prev.map((p) => (p._id === data._id ? data : p)));
@@ -181,11 +194,12 @@ const PedidoPage = () => {
         });
         setModalVisible(false);
         setPedidoEdit(null);
+        return true;
       } else {
-        // CREAR
+        // CREAR: agregamos debug: true para ver exactamente el descuento por insumo
         const resp = await apiFetch("/pedidos", {
           method: "POST",
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ ...payload, debug: true }),
         });
         const { ok, data } = await parseResponse(resp);
 
@@ -196,7 +210,24 @@ const PedidoPage = () => {
             detail: data?.error || data?.message || "Error desconocido",
             life: 6000,
           });
-          return;
+          return false;
+        }
+
+        // Mostrar/registrar el detalle de descuento si viene del back
+        if (Array.isArray(data?._debugDescuento) && data._debugDescuento.length) {
+          console.table(data._debugDescuento);
+          const resumen = data._debugDescuento
+            .map(
+              (x) =>
+                `${x.material}: ${x.descontado}${x.unidad ? " " + x.unidad : ""}`
+            )
+            .join(" | ");
+          toast.current?.show({
+            severity: "info",
+            summary: "Descuento de insumos",
+            detail: resumen,
+            life: 6500,
+          });
         }
 
         setPedidos((prev) => [data, ...prev]);
@@ -207,6 +238,7 @@ const PedidoPage = () => {
         });
         setModalVisible(false);
         setPedidoEdit(null);
+        return true;
       }
     } catch (error) {
       toast.current?.show({
@@ -215,6 +247,7 @@ const PedidoPage = () => {
         detail: error?.message || "No se pudo conectar",
         life: 5000,
       });
+      return false;
     } finally {
       setLoading(false);
     }
@@ -231,7 +264,9 @@ const PedidoPage = () => {
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-3xl font-semibold text-gray-700">Gestión de Pedidos</h2>
+        <h2 className="text-3xl font-semibold text-gray-700">
+          Gestión de Pedidos
+        </h2>
         <div className="space-x-3">
           <Button
             label="Nuevo Pedido"
@@ -256,14 +291,32 @@ const PedidoPage = () => {
       {/* === Dashboard de KPIs === */}
       <PedidoKPICards />
 
-      {/* Barra de búsqueda (nombre completo o teléfono) */}
-      <div className="mb-4">
+      {/* Barra de búsqueda + filtro de estado */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         <InputText
           type="text"
           placeholder="Buscar por nombre completo o teléfono"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full"
+        />
+        <Dropdown
+          value={estadoFilter}
+          options={ESTADOS.map((e) => ({ label: e, value: e }))}
+          onChange={(e) => setEstadoFilter(e.value || "")}
+          placeholder="Estado"
+          className="w-full"
+          panelClassName="rounded-md"
+        />
+        <Button
+          type="button"
+          label="MOSTRAR TODOS"
+          icon="pi pi-filter-slash"
+          className="p-button-secondary"
+          onClick={() => {
+            setSearchTerm("");
+            setEstadoFilter("");
+          }}
         />
       </div>
 
@@ -284,7 +337,7 @@ const PedidoPage = () => {
       <PedidoForm
         visible={isModalVisible}
         onHide={handleModalHide}
-        onSave={handleSave}
+        onSave={handleSave}      // ← El Form espera una Promise; lo usamos para bloquear doble envío
         pedidoEdit={pedidoEdit}
         clientes={clientes}
         productos={productos}

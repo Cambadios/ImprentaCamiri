@@ -46,6 +46,16 @@ export default function InsumosListMaquinaria({ insumos = [], loading = false })
     );
   };
 
+  const categoriaBody = (row) => {
+    const cat = row?.categoria;
+    if (!cat) return "-";
+    if (typeof cat === "string") return cat;
+    // cat es objeto poblado: {_id, nombre, tipo, prefijo}
+    const nombre = cat?.nombre ?? "-";
+    // const prefijo = cat?.prefijo ? ` (${cat.prefijo})` : ""; // ← si quieres mostrar
+    return nombre; // + prefijo;
+  };
+
   return (
     <div className="bg-white rounded-lg shadow p-3">
       <DataTable
@@ -68,7 +78,7 @@ export default function InsumosListMaquinaria({ insumos = [], loading = false })
         <Column header="#" body={(_, { rowIndex }) => rowIndex + 1} style={{ width: "4rem" }} />
         <Column field="codigo" header="Código" sortable />
         <Column header="Nombre / Descripción" body={nombreBody} />
-        <Column field="categoria" header="Categoría" sortable />
+        <Column header="Categoría" body={categoriaBody} sortable />
         <Column field="cantidadDisponible" header="Cantidad" style={{ width: "8rem" }} sortable />
         <Column field="unidadDeMedida" header="Unidad" style={{ width: "8rem" }} />
         <Column header="Precio Unitario" body={(r) => fmtMoneyBOB(r?.precioUnitario)} style={{ width: "10rem" }} />

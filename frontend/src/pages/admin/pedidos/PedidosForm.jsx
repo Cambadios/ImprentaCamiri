@@ -1,4 +1,3 @@
-// src/components/PedidoForm.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
@@ -11,10 +10,17 @@ import { apiFetch } from "../../../api/http";
 
 const normalizePhone = (v) => (v ? String(v).replace(/\D+/g, "") : "");
 
-const PedidoForm = ({
+// Sanitizador numérico para cantidad (entero ≥ 1)
+const sanitizeCantidad = (val) => {
+  const n = Number(val);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(1, Math.floor(n));
+};
+
+const PedidosForm = ({
   visible,
   onHide,
-  onSave,
+  onSave,          // ← se espera que devuelva una Promise<boolean>
   pedidoEdit,
   clientes = [],
   productos = [],
@@ -29,10 +35,12 @@ const PedidoForm = ({
     [productos, productoId]
   );
 
-  const [cantidad, setCantidad] = useState(0);
+  const [cantidad, setCantidad] = useState(1);
   const [estado, setEstado] = useState("");
   const [pagoCliente, setPagoCliente] = useState(0);
   const [fechaEntrega, setFechaEntrega] = useState(null);
+
+  const [submitting, setSubmitting] = useState(false); // ← bloquea doble clic
 
   const precioUnitario = productoObj?.precioUnitario || 0;
   const precioTotal = Number(precioUnitario) * Number(cantidad || 0);
@@ -43,9 +51,9 @@ const PedidoForm = ({
       setTelefono(pedidoEdit?.cliente?.telefono || "");
       setCliente(pedidoEdit?.cliente || null);
       setProductoId(pedidoEdit?.producto?._id || null);
-      setCantidad(pedidoEdit?.cantidad || 0);
+      setCantidad(sanitizeCantidad(pedidoEdit?.cantidad || 1));
       setEstado(pedidoEdit?.estado || "");
-      setPagoCliente(pedidoEdit?.pagado || 0);
+      setPagoCliente(Number(pedidoEdit?.pagado || 0));
       setFechaEntrega(
         pedidoEdit?.fechaEntrega ? new Date(pedidoEdit.fechaEntrega) : null
       );
@@ -54,14 +62,13 @@ const PedidoForm = ({
       setCliente(null);
       setClienteSuggestions([]);
       setProductoId(null);
-      setCantidad(0);
+      setCantidad(1);
       setEstado("");
       setPagoCliente(0);
       setFechaEntrega(null);
     }
   }, [pedidoEdit]);
 
-  // Sugerencias locales por teléfono
   const searchCliente = (e) => {
     const q = normalizePhone(e.query || "");
     const results = q
@@ -70,7 +77,6 @@ const PedidoForm = ({
     setClienteSuggestions(results);
   };
 
-  // Resolver localmente por teléfono
   const handleTelefonoChange = (e) => {
     const val = e.value;
     setTelefono(val);
@@ -79,7 +85,6 @@ const PedidoForm = ({
     setCliente(match || null);
   };
 
-  // Si no encontró localmente, consulta backend con debounce
   useEffect(() => {
     const norm = normalizePhone(telefono);
     if (!norm || cliente) return;
@@ -92,7 +97,7 @@ const PedidoForm = ({
           if (normalizePhone(telefono) === norm) setCliente(found);
         }
       } catch {
-        console.log("");
+        // silent
       }
     }, 300);
 
@@ -106,11 +111,22 @@ const PedidoForm = ({
   };
 
   const handleProductoChange = (e) => setProductoId(e.value);
-  const handleCantidadChange = (e) => setCantidad(e.value || 0);
-  const handlePagoClienteChange = (e) => setPagoCliente(e.value || 0);
+
+  // Fuerza entero ≥1 aunque el usuario borre o escriba algo extraño
+  const handleCantidadChange = (e) => {
+    const sane = sanitizeCantidad(e?.value);
+    setCantidad(sane);
+  };
+
+  const handlePagoClienteChange = (e) => {
+    const n = Number(e.value);
+    setPagoCliente(Number.isFinite(n) ? n : 0);
+  };
+
   const handleEstadoChange = (e) => setEstado(e.value);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (submitting) return; // evita doble clic
     if (!cliente?._id) {
       alert("Por favor, selecciona un cliente (por teléfono).");
       return;
@@ -119,7 +135,9 @@ const PedidoForm = ({
       alert("Por favor, selecciona un producto.");
       return;
     }
-    if (!cantidad || cantidad <= 0) {
+
+    const qty = sanitizeCantidad(cantidad);
+    if (!qty || qty <= 0) {
       alert("La cantidad debe ser mayor a 0.");
       return;
     }
@@ -127,22 +145,35 @@ const PedidoForm = ({
     const payload = {
       cliente: cliente._id,
       producto: productoId,
-      cantidad: Number(cantidad),
+      cantidad: qty, // ← ya sanitizada (entero ≥1)
       pagoInicial: Number(pagoCliente || 0),
       fechaEntrega: fechaEntrega || null,
+      estado, // ← se usa en PATCH cuando edites
     };
-    onSave(payload);
+
+    try {
+      setSubmitting(true);
+      // onSave devuelve Promise<boolean>; si es true, el contenedor cerrará el modal
+      const ok = await onSave(payload);
+      if (!ok) {
+        // Si falló, mantenemos el modal abierto para corregir
+        setSubmitting(false);
+      }
+      // Si ok === true, el modal ya se cierra desde el contenedor y el estado se resetea allí
+    } catch (e) {console.log(e)
+      setSubmitting(false);
+    }
   };
 
   return (
     <Dialog
       header={pedidoEdit ? "Editar Pedido" : "Nuevo Pedido"}
       visible={visible}
-      onHide={onHide}
+      onHide={submitting ? () => {} : onHide}
       style={{ width: "36rem", maxWidth: "95vw" }}
       className="rounded-2xl"
     >
-      <div className="p-fluid space-y-4">
+      <div className={`p-fluid space-y-4 ${submitting ? "opacity-90" : ""}`}>
         {/* Teléfono */}
         <div className="p-field">
           <label htmlFor="telefono" className="block text-gray-700">
@@ -161,6 +192,7 @@ const PedidoForm = ({
             className="w-full"
             inputClassName="w-full p-inputtext-sm border-2 border-gray-300 rounded-md"
             panelClassName="rounded-md"
+            disabled={submitting}
           />
         </div>
 
@@ -196,11 +228,11 @@ const PedidoForm = ({
             showClear
             className="w-full"
             panelClassName="rounded-md"
+            disabled={submitting}
           />
-          {/* Nota: el itemTemplate de PrimeReact ya se ve bien; Tailwind aplica al contenedor */}
         </div>
 
-        {/* Cantidad */}
+        {/* Cantidad (entera ≥1) */}
         <div className="p-field">
           <label htmlFor="cantidad" className="block text-gray-700">
             Cantidad
@@ -210,8 +242,10 @@ const PedidoForm = ({
             value={cantidad}
             onValueChange={handleCantidadChange}
             min={1}
+            useGrouping={false}
             className="w-full"
             inputClassName="w-full p-inputtext-sm border-2 border-gray-300 rounded-md"
+            disabled={submitting}
           />
         </div>
 
@@ -228,6 +262,7 @@ const PedidoForm = ({
             placeholder="Selecciona un estado"
             className="w-full"
             panelClassName="rounded-md"
+            disabled={submitting}
           />
         </div>
 
@@ -264,6 +299,7 @@ const PedidoForm = ({
               min={0}
               className="w-full"
               inputClassName="w-full p-inputtext-sm border-2 border-gray-300 rounded-md"
+              disabled={submitting}
             />
           </div>
 
@@ -291,6 +327,7 @@ const PedidoForm = ({
             className="w-full"
             inputClassName="w-full p-inputtext-sm border-2 border-gray-300 rounded-md"
             panelClassName="rounded-md"
+            disabled={submitting}
           />
         </div>
 
@@ -300,10 +337,12 @@ const PedidoForm = ({
             label="Cancelar"
             onClick={onHide}
             className="p-button-outlined p-button-secondary"
+            disabled={submitting}
           />
           <Button
-            label="Guardar"
+            label={submitting ? "Guardando..." : "Guardar"}
             onClick={handleSubmit}
+            disabled={submitting}
           />
         </div>
       </div>
@@ -311,4 +350,4 @@ const PedidoForm = ({
   );
 };
 
-export default PedidoForm;
+export default PedidosForm;

@@ -3,17 +3,12 @@ import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Dialog } from "primereact/dialog";
-import { Dropdown } from "primereact/dropdown";
 import PedidosListMaquinaria from "./PedidosListMaquinaria.jsx";
 import { apiFetch } from "../../../api/http";
 
-const ESTADOS = [
-  { label: "Pendiente", value: "pendiente" },
-  { label: "En producción", value: "en_produccion" },
-  { label: "Listo", value: "listo" },
-  { label: "Entregado", value: "entregado" },
-  { label: "Cancelado", value: "cancelado" },
-];
+// ⬇️ estados canónicos
+import EstadoDropdown from "../../../components/EstadoDropdwon.jsx";
+import { toCanonEstado, toCanonStrict } from "../../../utils/estados";
 
 const normalizeDigits = (v) => (v ? String(v).replace(/\D+/g, "") : "");
 const s = (v) => (v == null ? "" : String(v));
@@ -76,7 +71,8 @@ export default function PedidosPagesMaquinaria() {
 
   const abrirCambioEstado = (pedido) => {
     setPedidoSel(pedido);
-    setNuevoEstado(pedido?.estado || "");
+    // ⬇️ normaliza lo que venga del back para mostrarlo
+    setNuevoEstado(toCanonEstado(pedido?.estado) || "");
     setDlgOpen(true);
   };
 
@@ -84,9 +80,10 @@ export default function PedidosPagesMaquinaria() {
     if (!pedidoSel?._id) return;
     try {
       setLoading(true);
+      const estadoCanon = toCanonStrict(nuevoEstado || pedidoSel.estado);
       const resp = await apiFetch(`/pedidos/${pedidoSel._id}`, {
         method: "PATCH",
-        body: JSON.stringify({ estado: nuevoEstado || pedidoSel.estado }),
+        body: JSON.stringify({ estado: estadoCanon }),
       });
 
       // parse flexible
@@ -198,12 +195,11 @@ export default function PedidosPagesMaquinaria() {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm">Estado</label>
-            <Dropdown
+            {/* ⬇️ selector canónico (solo 4 opciones) */}
+            <EstadoDropdown
               value={nuevoEstado}
-              onChange={(e) => setNuevoEstado(e.value)}
-              options={ESTADOS}
+              onChange={setNuevoEstado}
               placeholder="Selecciona estado"
-              className="w-full"
             />
           </div>
         </div>

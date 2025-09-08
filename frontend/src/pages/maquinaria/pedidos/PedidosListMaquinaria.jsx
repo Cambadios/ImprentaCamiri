@@ -2,6 +2,7 @@ import React from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
+import { toCanonEstado } from "../../../utils/estados"; // ⬅️ util de estados
 
 /**
  * Lista de pedidos (Maquinaria): solo lectura + acción de cambiar estado.
@@ -19,7 +20,10 @@ export default function PedidosListMaquinaria({ pedidos = [], loading = false, o
   const phoneBody = (row) => row?.cliente?.telefono ?? "-";
   const productoBody = (row) => row?.producto?.nombre ?? row?.productoNombre ?? "-";
   const cantidadBody = (row) => row?.cantidad ?? "-";
-  const estadoBody = (row) => row?.estado ?? "-";
+
+  // ⬇️ mostrar estado ya canónico
+  const estadoBody = (row) => toCanonEstado(row?.estado) || "-";
+
   const fechaBody = (row) => {
     const v = row?.fechaEntrega;
     if (!v) return "-";

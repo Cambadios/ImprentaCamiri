@@ -191,14 +191,7 @@ export default function Login() {
             />
           </div>
 
-          <div className="text-center">
-            <Link
-              to="/olvide-contrasena"
-              className="text-yellow-500 hover:underline"
-            >
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
+
         </form>
       </div>
     </div>

@@ -13,68 +13,116 @@ const calcularEstadoPago = (total, pagado) => {
   return 'Pagado';
 };
 
-// Crear pedido (descuenta inventario)
-exports.crearPedido = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  try {
-    let { cliente, clienteTelefono, producto, cantidad, pagoInicial = 0, fechaEntrega } = req.body;
+// === helpers ===
+const toNum = (v, def = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : def;
+};
 
-    // Resolver cliente por teléfono si no viene _id
+// Crear pedido (descuenta inventario) — SIN TRANSACCIONES
+// Estrategia:
+//   1) Consolidar requerimientos por material
+//   2) Verificar stock leyendo inventarios
+//   3) Descontar con $inc condicional (cantidadDisponible >= req)
+//   4) Si alguna actualización falla, reponer lo ya descontado (compensación)
+//   5) Crear pedido
+exports.crearPedido = async (req, res, next) => {
+  try {
+    let { cliente, clienteTelefono, producto, cantidad, pagoInicial = 0, fechaEntrega, debug } = req.body;
+
+    // 0) Normalizaciones
+    cantidad    = toNum(cantidad, 0);
+    pagoInicial = toNum(pagoInicial, 0);
     if (!cliente && clienteTelefono) {
       const tel = normalizePhone(clienteTelefono);
-      const cli = await Cliente.findOne({ telefono: tel }).session(session);
+      const cli = await Cliente.findOne({ telefono: tel });
       if (!cli) throw new Error('Cliente no encontrado por teléfono');
       cliente = cli._id;
     }
-
-    if (!cliente || !producto || cantidad == null) {
-      throw new Error('cliente, producto y cantidad son obligatorios');
-    }
-
-    cantidad = Number(cantidad);
-    pagoInicial = Number(pagoInicial || 0);
+    if (!cliente || !producto || !cantidad) throw new Error('cliente, producto y cantidad son obligatorios');
     if (cantidad <= 0) throw new Error('La cantidad debe ser mayor a 0');
     if (pagoInicial < 0) throw new Error('El pago inicial no puede ser negativo');
 
-    // Verificar entidades
+    // 1) Cargar entidades
     const [cli, prod] = await Promise.all([
-      Cliente.findById(cliente).session(session),
-      Producto.findById(producto).populate('materiales.material').session(session)
+      Cliente.findById(cliente),
+      Producto.findById(producto).populate('materiales.material')
     ]);
-    if (!cli) throw new Error('Cliente no encontrado');
+    if (!cli)  throw new Error('Cliente no encontrado');
     if (!prod) throw new Error('Producto no encontrado');
 
-    // Calcular totales usando snapshot de precio del producto
-    const precioUnitarioPedido = Number(prod.precioUnitario || 0);
-    if (Number.isNaN(precioUnitarioPedido) || precioUnitarioPedido < 0) {
+    // 2) Totales con snapshot de precio
+    const precioUnitarioPedido = toNum(prod.precioUnitario, NaN);
+    if (!Number.isFinite(precioUnitarioPedido) || precioUnitarioPedido < 0) {
       throw new Error('El producto no tiene precioUnitario válido');
     }
-    const total = precioUnitarioPedido * cantidad;
-    const pagado = Math.min(pagoInicial, total);
-    const saldo  = Math.max(total - pagado, 0);
+    const total   = precioUnitarioPedido * cantidad;
+    const pagado  = Math.min(pagoInicial, total);
+    const saldo   = Math.max(total - pagado, 0);
     const estadoPago = calcularEstadoPago(total, pagado);
 
-    // Verificar stock de materiales
-    for (const item of (prod.materiales || [])) {
-      const reqPorUnidad = Number(item.cantidadPorUnidad || 0);
-      const reqTotal = reqPorUnidad * cantidad;
-      const inv = await Inventario.findById(item.material?._id || item.material).session(session).exec();
-      if (!inv) throw new Error(`Material no encontrado: ${item.material?.nombre || item.material}`);
-      if (inv.cantidadDisponible < reqTotal) {
-        throw new Error(`Stock insuficiente de "${inv.nombre}". Requerido: ${reqTotal} ${inv.unidadDeMedida}, Disponible: ${inv.cantidadDisponible}`);
+    // 3) Consolidar requerimientos por material
+    //    Map: inventarioIdStr -> cantidad total requerida
+    const requiredById = new Map();
+    for (const it of (prod.materiales || [])) {
+      const matId = String(it.material?._id || it.material);
+      const porUnidad = toNum(it.cantidadPorUnidad, 0);
+      if (porUnidad < 0) throw new Error(`cantidadPorUnidad inválida para material ${matId}`);
+      const reqTotal = porUnidad * cantidad;
+      if (!requiredById.has(matId)) requiredById.set(matId, 0);
+      requiredById.set(matId, requiredById.get(matId) + reqTotal);
+    }
+
+    // Si no requiere materiales, continuamos (podría ser un "servicio")
+    // 4) Verificación de stock (lectura)
+    const inventariosAfectados = []; // para debug/compensación
+    for (const [matId, reqTotalRaw] of requiredById.entries()) {
+      const reqTotal = toNum(reqTotalRaw, 0);
+      if (reqTotal <= 0) continue;
+
+      const inv = await Inventario.findById(matId).exec();
+      if (!inv) throw new Error(`Material no encontrado: ${matId}`);
+
+      const disponible = toNum(inv.cantidadDisponible, 0);
+      if (disponible < reqTotal) {
+        throw new Error(`Stock insuficiente de "${inv.nombre}". Requerido: ${reqTotal} ${inv.unidadDeMedida || ''}, Disponible: ${disponible}`);
       }
+
+      inventariosAfectados.push({
+        _id: inv._id,
+        nombre: inv.nombre,
+        unidad: inv.unidadDeMedida,
+        antes: disponible,
+        descontar: reqTotal
+      });
     }
 
-    // Descontar inventario
-    for (const item of (prod.materiales || [])) {
-      const reqTotal = Number(item.cantidadPorUnidad || 0) * cantidad;
-      const inv = await Inventario.findById(item.material?._id || item.material).session(session).exec();
-      inv.cantidadDisponible -= reqTotal;
-      await inv.save({ session });
+    // 5) Descuento con $inc condicional (sin sesiones/tx)
+    const updated = []; // para poder revertir si algo falla
+    try {
+      for (const item of inventariosAfectados) {
+        // Condición: solo descuenta si hay suficiente stock
+        const r = await Inventario.updateOne(
+          { _id: item._id, cantidadDisponible: { $gte: item.descontar } },
+          { $inc: { cantidadDisponible: -item.descontar } }
+        );
+        if (r.matchedCount !== 1 || r.modifiedCount !== 1) {
+          throw new Error(`No se pudo descontar inventario de ${item.nombre} (concurrencia/stock cambió)`);
+        }
+        updated.push(item);
+      }
+    } catch (err) {
+      // Compensación: reponer lo ya descontado
+      for (const item of updated) {
+        await Inventario.updateOne(
+          { _id: item._id },
+          { $inc: { cantidadDisponible: item.descontar } }
+        );
+      }
+      throw err;
     }
 
-    // Construir pedido
+    // 6) Crear pedido (ya se descontó stock)
     const pedidoData = {
       cliente,
       producto,
@@ -91,19 +139,26 @@ exports.crearPedido = async (req, res, next) => {
       pedidoData.pagos.push({ monto: pagado, metodo: 'inicial', nota: 'Pago inicial' });
     }
 
-    const pedido = await Pedido.create([pedidoData], { session });
-    await session.commitTransaction();
-    session.endSession();
+    const pedido = await Pedido.create(pedidoData);
 
-    const populated = await Pedido.findById(pedido[0]._id)
+    // 7) Respuesta
+    const populated = await Pedido.findById(pedido._id)
       .populate('cliente', 'nombre apellido telefono')
-      .populate('producto', 'nombre precioUnitario') // <- incluye precio
-      .exec();
+      .populate('producto', 'nombre precioUnitario')
+      .lean();
 
-    res.status(201).json(populated);
+    if (debug) {
+      populated._debugDescuento = inventariosAfectados.map(x => ({
+        material: x.nombre,
+        unidad: x.unidad,
+        antes: x.antes,
+        descontado: x.descontar,
+        despues: x.antes - x.descontar
+      }));
+    }
+
+    return res.status(201).json(populated);
   } catch (e) {
-    await session.abortTransaction();
-    session.endSession();
     next(e);
   }
 };
@@ -119,7 +174,7 @@ exports.listarPedidos = async (req, res, next) => {
     if (q) {
       const clientes = await Cliente.find({
         $or: [
-          { nombre: { $regex: q, $options: 'i' } },
+          { nombre:   { $regex: q, $options: 'i' } },
           { apellido: { $regex: q, $options: 'i' } },
           { telefono: { $regex: q.replace(/\D+/g, ''), $options: 'i' } },
         ]
@@ -138,7 +193,7 @@ exports.listarPedidos = async (req, res, next) => {
     const [data, total] = await Promise.all([
       Pedido.find(where)
         .populate('cliente', 'nombre apellido telefono')
-        .populate('producto', 'nombre precioUnitario') // <- incluye precio
+        .populate('producto', 'nombre precioUnitario')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit))
@@ -159,7 +214,7 @@ exports.getPedido = async (req, res, next) => {
   try {
     const pedido = await Pedido.findById(req.params.id)
       .populate('cliente', 'nombre apellido telefono correo')
-      .populate('producto', 'nombre descripcion precioUnitario') // <- incluye precio
+      .populate('producto', 'nombre descripcion precioUnitario')
       .lean();
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
     res.status(200).json(pedido);
@@ -167,11 +222,17 @@ exports.getPedido = async (req, res, next) => {
 };
 
 // Actualizar estado/fechaEntrega
+// Regla de negocio: 'Cancelado' = "cerrado/entregado".
 exports.actualizarPedido = async (req, res, next) => {
   try {
     const { estado, fechaEntrega } = req.body;
     const cambios = {};
-    if (estado) cambios.estado = estado;
+    if (estado) {
+      cambios.estado = estado;
+      if (estado === 'Entregado' || estado === 'Cancelado') {
+        cambios.entregadoEn = new Date(); // sello de cierre
+      }
+    }
     if (fechaEntrega !== undefined) cambios.fechaEntrega = fechaEntrega;
 
     const pedido = await Pedido.findByIdAndUpdate(
@@ -196,8 +257,8 @@ exports.registrarPago = async (req, res, next) => {
 
     const pedido = await Pedido.findById(req.params.id);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
-    if (pedido.estado === 'Cancelado') throw new Error('No se puede pagar un pedido cancelado');
 
+    // Permitimos pagar incluso si está Cancelado/Entregado (cerrado)
     const nuevoPagado = Number(pedido.pagado) + m;
     const nuevoSaldo  = Math.max(Number(pedido.total) - nuevoPagado, 0);
     const nuevoEstadoPago = calcularEstadoPago(Number(pedido.total), nuevoPagado);
@@ -217,7 +278,7 @@ exports.registrarPago = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// Entregar
+// Marcar entregado (atajo)
 exports.entregarPedido = async (req, res, next) => {
   try {
     const pedido = await Pedido.findByIdAndUpdate(
@@ -233,54 +294,63 @@ exports.entregarPedido = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// Cancelar (restaura inventario)
-exports.cancelarPedido = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+// Eliminar pedido (borrado físico) — SIN TRANSACCIONES
+// Reglas inventario:
+//   - Si 'Pendiente' o 'En proceso' => reponer inventario
+//   - Si 'Entregado' o 'Cancelado'  => NO reponer
+exports.eliminarPedido = async (req, res, next) => {
   try {
-    const pedido = await Pedido.findById(req.params.id).session(session);
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'ID inválido' });
+    }
+
+    const pedido = await Pedido.findById(id);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
-    if (pedido.estado === 'Entregado') throw new Error('No se puede cancelar un pedido ya entregado');
-    if (pedido.estado === 'Cancelado') {
-      await session.commitTransaction();
-      session.endSession();
-      return res.status(200).json(pedido);
+
+    const estado = String(pedido.estado || '');
+    const esCerrado = (estado === 'Entregado' || estado === 'Cancelado');
+
+    if (!esCerrado) {
+      try {
+        const prod = await Producto.findById(pedido.producto).populate('materiales.material');
+        if (prod && Array.isArray(prod.materiales)) {
+          // Consolidar por material
+          const devolverById = new Map();
+          for (const it of prod.materiales) {
+            const matId = String(it.material?._id || it.material);
+            const porUnidad = toNum(it.cantidadPorUnidad, 0);
+            const total = porUnidad * toNum(pedido.cantidad, 0);
+            if (!devolverById.has(matId)) devolverById.set(matId, 0);
+            devolverById.set(matId, devolverById.get(matId) + total);
+          }
+          // Reponer (best-effort; no lanzamos si falla alguna línea)
+          for (const [matId, devolver] of devolverById.entries()) {
+            if (devolver > 0) {
+              await Inventario.updateOne(
+                { _id: matId },
+                { $inc: { cantidadDisponible: devolver } }
+              );
+            }
+          }
+        }
+      } catch (restoreErr) {
+        console.error('[DELETE pedido] Fallo al reponer stock:', restoreErr);
+      }
     }
 
-    const prod = await Producto.findById(pedido.producto)
-      .populate('materiales.material')
-      .session(session);
-
-    if (!prod) throw new Error('Producto del pedido no encontrado');
-
-    for (const item of (prod.materiales || [])) {
-      const devolver = Number(item.cantidadPorUnidad || 0) * Number(pedido.cantidad || 0);
-      const inv = await Inventario.findById(item.material?._id || item.material).session(session).exec();
-      inv.cantidadDisponible += devolver;
-      await inv.save({ session });
-    }
-
-    pedido.estado = 'Cancelado';
-    await pedido.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
-
-    const populated = await Pedido.findById(pedido._id)
-      .populate('cliente', 'nombre apellido')
-      .populate('producto', 'nombre precioUnitario');
-
-    res.status(200).json(populated);
+    await Pedido.deleteOne({ _id: pedido._id });
+    return res.status(204).send();
   } catch (e) {
-    await session.abortTransaction();
-    session.endSession();
-    next(e);
+    const msg = e?.message || 'Error eliminando pedido';
+    console.error('[DELETE pedido] Error:', msg);
+    return res.status(500).json({ message: msg });
   }
 };
-// --- KPIs de Pedidos: counts y montos por estado ---
+
+// --- KPIs de Pedidos ---
 exports.kpisPedidos = async (req, res, next) => {
   try {
-    // Filtros opcionales ?from=YYYY-MM-DD&to=YYYY-MM-DD
     const { from, to } = req.query;
     const where = {};
     if (from || to) {
@@ -290,12 +360,10 @@ exports.kpisPedidos = async (req, res, next) => {
     }
 
     const [porEstado, totales] = await Promise.all([
-      // Conteos por estado
       Pedido.aggregate([
         { $match: where },
         { $group: { _id: '$estado', count: { $sum: 1 } } }
       ]),
-      // Totales de dinero
       Pedido.aggregate([
         { $match: where },
         {
@@ -317,17 +385,13 @@ exports.kpisPedidos = async (req, res, next) => {
 
     const t = totales[0] || { totalPedidos: 0, totalMonto: 0, totalPagado: 0, totalSaldo: 0 };
 
-    // Mapeo a tus nombres:
-    // - "realizados"   => Entregado
-    // - "porHacer"     => Pendiente
-    // - "enEspera"     => En proceso
-    // - "cancelados"   => Cancelado
-    const payload = {
-      realizados: countMap['Entregado'] || 0,
-      porHacer:   countMap['Pendiente'] || 0,
-      enEspera:   countMap['En proceso'] || 0,
-      cancelados: countMap['Cancelado'] || 0,
+    const realizadosCerrados = (countMap['Entregado'] || 0) + (countMap['Cancelado'] || 0);
 
+    const payload = {
+      realizados: realizadosCerrados,            // Cerrados: Entregado + Cancelado
+      porHacer:   countMap['Pendiente'] || 0,   // Pendientes
+      enEspera:   countMap['En proceso'] || 0,  // En proceso
+      cancelados: countMap['Cancelado'] || 0,   // Mostrar aparte si quieres
       totalPedidos: t.totalPedidos || 0,
       totalMonto:   t.totalMonto   || 0,
       totalPagado:  t.totalPagado  || 0,
@@ -337,4 +401,3 @@ exports.kpisPedidos = async (req, res, next) => {
     res.json(payload);
   } catch (e) { next(e); }
 };
-

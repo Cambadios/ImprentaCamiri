@@ -23,13 +23,14 @@ import UsuariosPage from "./pages/admin/usuarios/UsuariosPages";
 import AdminDashboardPage from "./pages/admin/dashboard/index.jsx";
 import HomePages from "./pages/admin/home/HomePages.jsx";
 import CategoriasPage from "./pages/admin/categorias/CategoriasPages.jsx";
-
+import BIDashboard from "./pages/admin/bi/BIDashboard.jsx";
 
 // Maquinaria (asegúrate que estos archivos tienen export default)
 import HomePagesMaquinaria from "./pages/maquinaria/home/HomePages.jsx";
 import ClientesPageMaquinaria from "./pages/maquinaria/clientes/ClientesPagesMaquinaria.jsx";
 import PedidosPageMaquinaria from "./pages/maquinaria/pedidos/PedidosPagesMaquinaria.jsx";
 import InsumosPageMaquinaria from "./pages/maquinaria/insumos/InsumosPagesMaquinaria.jsx";
+
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="productos" element={<ProductoPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
             <Route path="categorias" element={<CategoriasPage />} />
+            <Route path="bi" element={<BIDashboard />} />
           </Route>
         </Route>
 

@@ -61,9 +61,9 @@ const PedidosList = ({ pedidos = [], onEdit, onDelete }) => {
   const getEstadoSeverity = (estadoRaw) => {
     const e = String(estadoRaw || "").toLowerCase();
     if (e === "pendiente") return "warning";
-    if (e === "en proceso") return "info";
-    if (e === "entregado") return "success";
-    if (e === "cancelado") return "danger";
+    if (e === "en produccion") return "info";
+    if (e === "hecho") return "success";
+    if (e === "entregado") return "secondary"; // normalmente no lo verás: el back lo elimina
     return "secondary";
   };
 
@@ -130,22 +130,22 @@ const PedidosList = ({ pedidos = [], onEdit, onDelete }) => {
           <p className="text-lg">
             ¿Estás seguro de que deseas eliminar este pedido?
           </p>
-          <div className="flex justify-center gap-4 mt-4">
-            <Button
-              label="Cancelar"
-              icon="pi pi-times"
-              className="p-button-outlined p-button-secondary"
-              onClick={closeDeleteModal}
-              disabled={deleting}
-            />
-            <Button
-              label={deleting ? "Eliminando..." : "Eliminar"}
-              icon="pi pi-check"
-              className="p-button-danger"
-              onClick={confirmDelete}
-              disabled={deleting}
-            />
-          </div>
+        </div>
+        <div className="flex justify-center gap-4 mt-4">
+          <Button
+            label="Cancelar"
+            icon="pi pi-times"
+            className="p-button-outlined p-button-secondary"
+            onClick={closeDeleteModal}
+            disabled={deleting}
+          />
+          <Button
+            label={deleting ? "Eliminando..." : "Eliminar"}
+            icon="pi pi-check"
+            className="p-button-danger"
+            onClick={confirmDelete}
+            disabled={deleting}
+          />
         </div>
       </Dialog>
     </div>

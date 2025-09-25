@@ -19,6 +19,20 @@ const toNum = (v, def = 0) => {
   return Number.isFinite(n) ? n : def;
 };
 
+// === Finite State Machine (FSM) ===
+// No retrocesos ni saltos. Solo secuencia exacta:
+const ORDER_STATES = ['Pendiente', 'En Produccion', 'Hecho', 'Entregado'];
+const TRANSITIONS = {
+  'Pendiente':     ['En Produccion'],
+  'En Produccion': ['Hecho'],
+  'Hecho':         ['Entregado'],
+  'Entregado':     [] // al llegar aquí se elimina el pedido
+};
+
+function canTransition(from, to) {
+  return (TRANSITIONS[from] || []).includes(to);
+}
+
 // Crear pedido (descuenta inventario) — SIN TRANSACCIONES
 // Estrategia:
 //   1) Consolidar requerimientos por material
@@ -62,7 +76,6 @@ exports.crearPedido = async (req, res, next) => {
     const estadoPago = calcularEstadoPago(total, pagado);
 
     // 3) Consolidar requerimientos por material
-    //    Map: inventarioIdStr -> cantidad total requerida
     const requiredById = new Map();
     for (const it of (prod.materiales || [])) {
       const matId = String(it.material?._id || it.material);
@@ -73,9 +86,8 @@ exports.crearPedido = async (req, res, next) => {
       requiredById.set(matId, requiredById.get(matId) + reqTotal);
     }
 
-    // Si no requiere materiales, continuamos (podría ser un "servicio")
     // 4) Verificación de stock (lectura)
-    const inventariosAfectados = []; // para debug/compensación
+    const inventariosAfectados = [];
     for (const [matId, reqTotalRaw] of requiredById.entries()) {
       const reqTotal = toNum(reqTotalRaw, 0);
       if (reqTotal <= 0) continue;
@@ -97,11 +109,10 @@ exports.crearPedido = async (req, res, next) => {
       });
     }
 
-    // 5) Descuento con $inc condicional (sin sesiones/tx)
-    const updated = []; // para poder revertir si algo falla
+    // 5) Descuento con $inc condicional
+    const updated = [];
     try {
       for (const item of inventariosAfectados) {
-        // Condición: solo descuenta si hay suficiente stock
         const r = await Inventario.updateOne(
           { _id: item._id, cantidadDisponible: { $gte: item.descontar } },
           { $inc: { cantidadDisponible: -item.descontar } }
@@ -112,7 +123,7 @@ exports.crearPedido = async (req, res, next) => {
         updated.push(item);
       }
     } catch (err) {
-      // Compensación: reponer lo ya descontado
+      // Compensación
       for (const item of updated) {
         await Inventario.updateOne(
           { _id: item._id },
@@ -122,7 +133,7 @@ exports.crearPedido = async (req, res, next) => {
       throw err;
     }
 
-    // 6) Crear pedido (ya se descontó stock)
+    // 6) Crear pedido
     const pedidoData = {
       cliente,
       producto,
@@ -133,6 +144,7 @@ exports.crearPedido = async (req, res, next) => {
       saldo,
       estadoPago,
       fechaEntrega,
+      estado: 'Pendiente',
       pagos: []
     };
     if (pagado > 0) {
@@ -221,34 +233,75 @@ exports.getPedido = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// Actualizar estado/fechaEntrega
-// Regla de negocio: 'Cancelado' = "cerrado/entregado".
+// --- REGLAS DE ESTADO ---
+// actualizarPedido: solo permite transiciones válidas del FSM.
+// Si se intenta pasar a 'Entregado':
+//   - Debe venir desde 'Hecho' (no saltos).
+//   - Debe estar estadoPago === 'Pagado'.
+//   - Si cumple, elimina el documento y responde confirmación.
 exports.actualizarPedido = async (req, res, next) => {
   try {
     const { estado, fechaEntrega } = req.body;
+
+    const pedido = await Pedido.findById(req.params.id);
+    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
+
+    // Si ya estaba en Entregado por alguna razón (no debería persistir): eliminar
+    if (pedido.estado === 'Entregado') {
+      await Pedido.deleteOne({ _id: pedido._id });
+      return res.status(200).json({ deleted: true, message: 'El pedido ya estaba en Entregado y fue eliminado.' });
+    }
+
     const cambios = {};
+
+    // Validación FSM
     if (estado) {
-      cambios.estado = estado;
-      if (estado === 'Entregado' || estado === 'Cancelado') {
-        cambios.entregadoEn = new Date(); // sello de cierre
+      if (!ORDER_STATES.includes(estado)) {
+        return res.status(400).json({ message: `Estado inválido: ${estado}` });
+      }
+      if (estado === pedido.estado) {
+        // no hay cambios; solo actualizar fechaEntrega si vino
+      } else {
+        if (!canTransition(pedido.estado, estado)) {
+          return res.status(400).json({
+            message: `Transición inválida: ${pedido.estado} → ${estado}. Flujo permitido: Pendiente → En Produccion → Hecho → Entregado`
+          });
+        }
+        // Cheque especial para Entregado: debe estar totalmente pagado
+        if (estado === 'Entregado') {
+          if (pedido.estadoPago !== 'Pagado') {
+            return res.status(400).json({ message: 'Para marcar Entregado, el pedido debe estar Pagado al 100%.' });
+          }
+          // sello de entrega y eliminar
+          const entregadoEn = new Date();
+          // opcional: podrías registrar a bitácora antes de eliminar
+          await Pedido.deleteOne({ _id: pedido._id });
+          return res.status(200).json({
+            deleted: true,
+            message: 'Pedido entregado y eliminado.',
+            entregadoEn
+          });
+        }
+        cambios.estado = estado;
       }
     }
+
     if (fechaEntrega !== undefined) cambios.fechaEntrega = fechaEntrega;
 
-    const pedido = await Pedido.findByIdAndUpdate(
-      req.params.id,
+    const actualizado = await Pedido.findByIdAndUpdate(
+      pedido._id,
       cambios,
       { new: true }
     )
     .populate('cliente', 'nombre apellido')
     .populate('producto', 'nombre precioUnitario');
 
-    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
-    res.status(200).json(pedido);
+    return res.status(200).json(actualizado);
   } catch (e) { next(e); }
 };
 
 // Registrar pago
+// Nota: si ya estuviera en 'Entregado' no debería existir; prevenimos por si acaso.
 exports.registrarPago = async (req, res, next) => {
   try {
     const { monto, metodo = 'efectivo', nota } = req.body;
@@ -258,15 +311,20 @@ exports.registrarPago = async (req, res, next) => {
     const pedido = await Pedido.findById(req.params.id);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
-    // Permitimos pagar incluso si está Cancelado/Entregado (cerrado)
+    if (pedido.estado === 'Entregado') {
+      // Por diseño, al marcar Entregado se elimina; esto es un seguro adicional.
+      await Pedido.deleteOne({ _id: pedido._id });
+      return res.status(410).json({ message: 'El pedido ya fue entregado y eliminado.' });
+    }
+
     const nuevoPagado = Number(pedido.pagado) + m;
     const nuevoSaldo  = Math.max(Number(pedido.total) - nuevoPagado, 0);
     const nuevoEstadoPago = calcularEstadoPago(Number(pedido.total), nuevoPagado);
 
     pedido.pagos.push({ monto: m, metodo, nota });
-    pedido.pagado    = nuevoPagado;
-    pedido.saldo     = nuevoSaldo;
-    pedido.estadoPago= nuevoEstadoPago;
+    pedido.pagado     = nuevoPagado;
+    pedido.saldo      = nuevoSaldo;
+    pedido.estadoPago = nuevoEstadoPago;
 
     await pedido.save();
 
@@ -278,26 +336,35 @@ exports.registrarPago = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// Marcar entregado (atajo)
+// Atajo para marcar entregado (aplica mismas reglas y elimina)
 exports.entregarPedido = async (req, res, next) => {
   try {
-    const pedido = await Pedido.findByIdAndUpdate(
-      req.params.id,
-      { estado: 'Entregado', entregadoEn: new Date() },
-      { new: true }
-    )
-    .populate('cliente', 'nombre apellido')
-    .populate('producto', 'nombre precioUnitario');
-
+    const pedido = await Pedido.findById(req.params.id);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
-    res.status(200).json(pedido);
+
+    // Validación FSM: solo desde Hecho → Entregado
+    if (!canTransition(pedido.estado, 'Entregado')) {
+      return res.status(400).json({
+        message: `Transición inválida: ${pedido.estado} → Entregado. Debe estar en 'Hecho'.`
+      });
+    }
+
+    // Debe estar pagado al 100%
+    if (pedido.estadoPago !== 'Pagado') {
+      return res.status(400).json({ message: 'Para marcar Entregado, el pedido debe estar Pagado al 100%.' });
+    }
+
+    const entregadoEn = new Date();
+    await Pedido.deleteOne({ _id: pedido._id });
+
+    res.status(200).json({ deleted: true, message: 'Pedido entregado y eliminado.', entregadoEn });
   } catch (e) { next(e); }
 };
 
 // Eliminar pedido (borrado físico) — SIN TRANSACCIONES
 // Reglas inventario:
-//   - Si 'Pendiente' o 'En proceso' => reponer inventario
-//   - Si 'Entregado' o 'Cancelado'  => NO reponer
+//   - Si 'Pendiente' o 'En Produccion' o 'Hecho' => reponer inventario
+//   - 'Entregado' ya no debería existir (se elimina al marcar entregado)
 exports.eliminarPedido = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -309,9 +376,9 @@ exports.eliminarPedido = async (req, res, next) => {
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
     const estado = String(pedido.estado || '');
-    const esCerrado = (estado === 'Entregado' || estado === 'Cancelado');
 
-    if (!esCerrado) {
+    // Reponer si no fue entregado
+    if (estado !== 'Entregado') {
       try {
         const prod = await Producto.findById(pedido.producto).populate('materiales.material');
         if (prod && Array.isArray(prod.materiales)) {
@@ -324,7 +391,7 @@ exports.eliminarPedido = async (req, res, next) => {
             if (!devolverById.has(matId)) devolverById.set(matId, 0);
             devolverById.set(matId, devolverById.get(matId) + total);
           }
-          // Reponer (best-effort; no lanzamos si falla alguna línea)
+          // Reponer (best-effort)
           for (const [matId, devolver] of devolverById.entries()) {
             if (devolver > 0) {
               await Inventario.updateOne(
@@ -348,7 +415,7 @@ exports.eliminarPedido = async (req, res, next) => {
   }
 };
 
-// --- KPIs de Pedidos ---
+// --- KPIs de Pedidos --- (refleja solo pedidos NO entregados, ya que se eliminan)
 exports.kpisPedidos = async (req, res, next) => {
   try {
     const { from, to } = req.query;
@@ -385,13 +452,10 @@ exports.kpisPedidos = async (req, res, next) => {
 
     const t = totales[0] || { totalPedidos: 0, totalMonto: 0, totalPagado: 0, totalSaldo: 0 };
 
-    const realizadosCerrados = (countMap['Entregado'] || 0) + (countMap['Cancelado'] || 0);
-
     const payload = {
-      realizados: realizadosCerrados,            // Cerrados: Entregado + Cancelado
-      porHacer:   countMap['Pendiente'] || 0,   // Pendientes
-      enEspera:   countMap['En proceso'] || 0,  // En proceso
-      cancelados: countMap['Cancelado'] || 0,   // Mostrar aparte si quieres
+      pendientes:   countMap['Pendiente']     || 0,
+      produccion:   countMap['En Produccion'] || 0,
+      hechos:       countMap['Hecho']         || 0,
       totalPedidos: t.totalPedidos || 0,
       totalMonto:   t.totalMonto   || 0,
       totalPagado:  t.totalPagado  || 0,

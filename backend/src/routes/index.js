@@ -12,6 +12,8 @@ const dashboardRoutes = require('./dashboardsRoutes')
 const exportRoutes = require('./exportRoutes');
 const dashboardRoutesMaquinaria = require('./dashboardRoutesMaquinaria');
 const categoriaRoutes = require('./categoriaRoutes');
+const biRoutes = require('./biRoutes');
+
 
 const router = express.Router();
 
@@ -29,6 +31,7 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/export', exportRoutes);
 router.use('/dashboardMaquinaria', dashboardRoutesMaquinaria);
 router.use('/categorias', categoriaRoutes);
+router.use('/bi', biRoutes )
 
 // Reportes (si adentro define '/reporte-pdf')
 router.use(reporteRoutes);

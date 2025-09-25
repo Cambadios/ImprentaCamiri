@@ -20,6 +20,7 @@ export default function AdminTabs() {
   const tabs = useMemo(
     () => [
       { id: "dashboard", label: "Reportes", icon: "📊", path: "dashboard" },
+      { id: "bi", label: "Busqueda Personalizada", icon: "📊", path: "bi" },
       { id: "clientes", label: "Clientes", icon: "🧑‍💼", path: "clientes" },
       { id: "productos", label: "Productos", icon: "🎁", path: "productos" },
       { id: "insumos", label: "Insumos", icon: "📦", path: "inventario" },

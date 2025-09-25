@@ -9,7 +9,7 @@ import { Dropdown } from "primereact/dropdown";
 import { apiFetch } from "../../../api/http";
 import { downloadFile } from "../../../api/download";
 
-const ESTADOS = ["Pendiente", "En proceso", "Entregado", "Cancelado"];
+const ESTADOS = ["Pendiente", "En Produccion", "Hecho", "Entregado"];
 
 const normalizeDigits = (v) => (v ? String(v).replace(/\D+/g, "") : "");
 const safeStr = (v) => (v == null ? "" : String(v));
@@ -41,7 +41,7 @@ const PedidoPage = () => {
     } catch {
       data = text ? { message: text } : null;
     }
-    return { ok: resp.ok, status: resp.status, data };
+    return { ok: resp?.ok, status: resp?.status, data };
   };
 
   // Pedidos
@@ -166,13 +166,20 @@ const PedidoPage = () => {
       setLoading(true);
 
       if (pedidoEdit) {
-        // EDITAR: sólo enviamos estado y fechaEntrega (según backend)
+        // EDITAR: enviar solo lo que cambió (estado si cambia y/o fechaEntrega)
+        const body = {};
+        if (payload.fechaEntrega !== undefined)
+          body.fechaEntrega = payload.fechaEntrega;
+        if (
+          payload.estado &&
+          payload.estado !== safeStr(pedidoEdit.estado)
+        ) {
+          body.estado = payload.estado;
+        }
+
         const resp = await apiFetch(`/pedidos/${pedidoEdit._id}`, {
           method: "PATCH",
-          body: JSON.stringify({
-            estado: payload.estado || pedidoEdit.estado,
-            fechaEntrega: payload.fechaEntrega || pedidoEdit.fechaEntrega,
-          }),
+          body: JSON.stringify(body),
         });
         const { ok, data } = await parseResponse(resp);
 
@@ -186,6 +193,21 @@ const PedidoPage = () => {
           return false;
         }
 
+        // Si el backend eliminó por pasar a Entregado
+        if (data?.deleted) {
+          setPedidos((prev) => prev.filter((p) => p._id !== pedidoEdit._id));
+          toast.current?.show({
+            severity: "success",
+            summary: "Pedido entregado",
+            detail: "Se marcó como Entregado y fue eliminado.",
+            life: 3500,
+          });
+          setModalVisible(false);
+          setPedidoEdit(null);
+          return true;
+        }
+
+        // Actualización normal
         setPedidos((prev) => prev.map((p) => (p._id === data._id ? data : p)));
         toast.current?.show({
           severity: "success",
@@ -196,7 +218,7 @@ const PedidoPage = () => {
         setPedidoEdit(null);
         return true;
       } else {
-        // CREAR: agregamos debug: true para ver exactamente el descuento por insumo
+        // CREAR
         const resp = await apiFetch("/pedidos", {
           method: "POST",
           body: JSON.stringify({ ...payload, debug: true }),
@@ -216,18 +238,6 @@ const PedidoPage = () => {
         // Mostrar/registrar el detalle de descuento si viene del back
         if (Array.isArray(data?._debugDescuento) && data._debugDescuento.length) {
           console.table(data._debugDescuento);
-          const resumen = data._debugDescuento
-            .map(
-              (x) =>
-                `${x.material}: ${x.descontado}${x.unidad ? " " + x.unidad : ""}`
-            )
-            .join(" | ");
-          toast.current?.show({
-            severity: "info",
-            summary: "Descuento de insumos",
-            detail: resumen,
-            life: 6500,
-          });
         }
 
         setPedidos((prev) => [data, ...prev]);
@@ -337,7 +347,7 @@ const PedidoPage = () => {
       <PedidoForm
         visible={isModalVisible}
         onHide={handleModalHide}
-        onSave={handleSave}      // ← El Form espera una Promise; lo usamos para bloquear doble envío
+        onSave={handleSave}
         pedidoEdit={pedidoEdit}
         clientes={clientes}
         productos={productos}

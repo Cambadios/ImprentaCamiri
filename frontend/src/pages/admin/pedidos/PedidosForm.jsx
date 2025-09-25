@@ -6,6 +6,7 @@ import { Calendar } from "primereact/calendar";
 import { Button } from "primereact/button";
 import { Dropdown } from "primereact/dropdown";
 import { AutoComplete } from "primereact/autocomplete";
+import { Tag } from "primereact/tag";
 import { apiFetch } from "../../../api/http";
 
 const normalizePhone = (v) => (v ? String(v).replace(/\D+/g, "") : "");
@@ -17,6 +18,16 @@ const sanitizeCantidad = (val) => {
   return Math.max(1, Math.floor(n));
 };
 
+// === FSM (igual que en backend) ===
+const ORDER_STATES = ["Pendiente", "En Produccion", "Hecho", "Entregado"];
+const TRANSITIONS = {
+  "Pendiente": ["En Produccion"],
+  "En Produccion": ["Hecho"],
+  "Hecho": ["Entregado"],
+  "Entregado": []
+};
+const nextStatesOf = (from) => TRANSITIONS[from] || [];
+
 const PedidosForm = ({
   visible,
   onHide,
@@ -25,6 +36,8 @@ const PedidosForm = ({
   clientes = [],
   productos = [],
 }) => {
+  const isEdit = !!pedidoEdit;
+
   const [telefono, setTelefono] = useState("");
   const [cliente, setCliente] = useState(null);
   const [clienteSuggestions, setClienteSuggestions] = useState([]);
@@ -36,7 +49,10 @@ const PedidosForm = ({
   );
 
   const [cantidad, setCantidad] = useState(1);
-  const [estado, setEstado] = useState("");
+
+  // En creación no mostramos dropdown de estado; en edición mostramos SOLO el siguiente permitido
+  const [estadoSiguiente, setEstadoSiguiente] = useState(""); // solo para edición
+
   const [pagoCliente, setPagoCliente] = useState(0);
   const [fechaEntrega, setFechaEntrega] = useState(null);
 
@@ -52,20 +68,20 @@ const PedidosForm = ({
       setCliente(pedidoEdit?.cliente || null);
       setProductoId(pedidoEdit?.producto?._id || null);
       setCantidad(sanitizeCantidad(pedidoEdit?.cantidad || 1));
-      setEstado(pedidoEdit?.estado || "");
       setPagoCliente(Number(pedidoEdit?.pagado || 0));
       setFechaEntrega(
         pedidoEdit?.fechaEntrega ? new Date(pedidoEdit.fechaEntrega) : null
       );
+      setEstadoSiguiente(""); // limpio selección; usuario decidirá si avanza
     } else {
       setTelefono("");
       setCliente(null);
       setClienteSuggestions([]);
       setProductoId(null);
       setCantidad(1);
-      setEstado("");
       setPagoCliente(0);
       setFechaEntrega(null);
+      setEstadoSiguiente("");
     }
   }, [pedidoEdit]);
 
@@ -123,15 +139,20 @@ const PedidosForm = ({
     setPagoCliente(Number.isFinite(n) ? n : 0);
   };
 
-  const handleEstadoChange = (e) => setEstado(e.value);
+  const allowedNextStates = useMemo(() => {
+    const current = pedidoEdit?.estado || "Pendiente";
+    return nextStatesOf(current);
+  }, [pedidoEdit]);
 
   const handleSubmit = async () => {
     if (submitting) return; // evita doble clic
-    if (!cliente?._id) {
+
+    // Validaciones base
+    if (!isEdit && !cliente?._id) {
       alert("Por favor, selecciona un cliente (por teléfono).");
       return;
     }
-    if (!productoId) {
+    if (!isEdit && !productoId) {
       alert("Por favor, selecciona un producto.");
       return;
     }
@@ -142,24 +163,39 @@ const PedidosForm = ({
       return;
     }
 
-    const payload = {
+    // Armado de payload
+    if (isEdit) {
+      // Solo enviamos el estado si el usuario decide avanzar (siguiente permitido)
+      const payload = {
+        fechaEntrega: fechaEntrega || null
+      };
+      if (estadoSiguiente && allowedNextStates.includes(estadoSiguiente)) {
+        payload.estado = estadoSiguiente;
+      }
+      try {
+        setSubmitting(true);
+        const ok = await onSave(payload);
+        if (!ok) setSubmitting(false);
+      } catch (e) {console.log(e)
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // CREACIÓN: Estado automático = 'Pendiente' (el backend lo pone por defecto)
+    const payloadCreate = {
       cliente: cliente._id,
       producto: productoId,
-      cantidad: qty, // ← ya sanitizada (entero ≥1)
+      cantidad: qty,
       pagoInicial: Number(pagoCliente || 0),
-      fechaEntrega: fechaEntrega || null,
-      estado, // ← se usa en PATCH cuando edites
+      fechaEntrega: fechaEntrega || null
+      // NO mandamos estado: el back asigna 'Pendiente'
     };
 
     try {
       setSubmitting(true);
-      // onSave devuelve Promise<boolean>; si es true, el contenedor cerrará el modal
-      const ok = await onSave(payload);
-      if (!ok) {
-        // Si falló, mantenemos el modal abierto para corregir
-        setSubmitting(false);
-      }
-      // Si ok === true, el modal ya se cierra desde el contenedor y el estado se resetea allí
+      const ok = await onSave(payloadCreate);
+      if (!ok) setSubmitting(false);
     } catch (e) {console.log(e)
       setSubmitting(false);
     }
@@ -167,7 +203,7 @@ const PedidosForm = ({
 
   return (
     <Dialog
-      header={pedidoEdit ? "Editar Pedido" : "Nuevo Pedido"}
+      header={isEdit ? "Editar Pedido" : "Nuevo Pedido"}
       visible={visible}
       onHide={submitting ? () => {} : onHide}
       style={{ width: "36rem", maxWidth: "95vw" }}
@@ -212,25 +248,27 @@ const PedidosForm = ({
           />
         </div>
 
-        {/* Producto */}
-        <div className="p-field">
-          <label htmlFor="producto" className="block text-gray-700">
-            Producto
-          </label>
-          <Dropdown
-            id="producto"
-            value={productoId}
-            options={productos}
-            onChange={handleProductoChange}
-            optionLabel="nombre"
-            optionValue="_id"
-            placeholder="Selecciona un Producto"
-            showClear
-            className="w-full"
-            panelClassName="rounded-md"
-            disabled={submitting}
-          />
-        </div>
+        {/* Producto (solo creación) */}
+        {!isEdit && (
+          <div className="p-field">
+            <label htmlFor="producto" className="block text-gray-700">
+              Producto
+            </label>
+            <Dropdown
+              id="producto"
+              value={productoId}
+              options={productos}
+              onChange={handleProductoChange}
+              optionLabel="nombre"
+              optionValue="_id"
+              placeholder="Selecciona un Producto"
+              showClear
+              className="w-full"
+              panelClassName="rounded-md"
+              disabled={submitting}
+            />
+          </div>
+        )}
 
         {/* Cantidad (entera ≥1) */}
         <div className="p-field">
@@ -250,21 +288,29 @@ const PedidosForm = ({
         </div>
 
         {/* Estado */}
-        <div className="p-field">
-          <label htmlFor="estado" className="block text-gray-700">
-            Estado
-          </label>
-          <Dropdown
-            id="estado"
-            value={estado}
-            options={["Pendiente", "En proceso", "Entregado", "Cancelado"]}
-            onChange={handleEstadoChange}
-            placeholder="Selecciona un estado"
-            className="w-full"
-            panelClassName="rounded-md"
-            disabled={submitting}
-          />
-        </div>
+        {isEdit ? (
+          <div className="p-field">
+            <label htmlFor="estado" className="block text-gray-700">
+              Estado actual: <Tag value={pedidoEdit?.estado || "Pendiente"} rounded className="ml-1" />
+            </label>
+            <Dropdown
+              id="estado"
+              value={estadoSiguiente}
+              options={allowedNextStates.map((e) => ({ label: e, value: e }))}
+              onChange={(e) => setEstadoSiguiente(e.value)}
+              placeholder={allowedNextStates.length ? "Selecciona el siguiente estado (opcional)" : "No hay siguiente estado"}
+              className="w-full"
+              panelClassName="rounded-md"
+              disabled={submitting || !allowedNextStates.length}
+              showClear
+            />
+          </div>
+        ) : (
+          <div className="p-field">
+            <label className="block text-gray-700">Estado</label>
+            <Tag value="Pendiente" severity="warning" rounded className="px-3 py-1" />
+          </div>
+        )}
 
         {/* Precios */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

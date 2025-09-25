@@ -23,9 +23,10 @@ const pedidoSchema = new mongoose.Schema({
 
   cantidad: { type: Number, required: true, min: 1 },
 
+  // NUEVOS ESTADOS (FSM): no se puede retroceder ni saltar.
   estado: {
     type: String,
-    enum: ['Pendiente', 'En proceso', 'Entregado', 'Cancelado'],
+    enum: ['Pendiente', 'En Produccion', 'Hecho', 'Entregado'],
     default: 'Pendiente',
     index: true
   },
@@ -46,7 +47,7 @@ const pedidoSchema = new mongoose.Schema({
   },
 
   fechaEntrega: { type: Date }, // fecha prometida
-  entregadoEn:  { type: Date }, // fecha real de entrega
+  entregadoEn:  { type: Date }, // fecha real de entrega (solo para lógica interna antes de eliminar)
 }, { timestamps: true });
 
 // Índices adicionales para orden/consultas

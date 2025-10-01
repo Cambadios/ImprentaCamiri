@@ -1,21 +1,12 @@
-// src/pages/Inventario/InventarioList.jsx
 import React, { useState } from 'react';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
 
-const InventarioList = ({ inventarios, onEdit, onDelete }) => {
+const InventarioList = ({ inventarios, onEdit, onDelete, onIngreso, onKardex }) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [productoToDelete, setProductoToDelete] = useState(null);
-
-  const formatDate = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    return d.toLocaleDateString('es-ES', {
-      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
-    });
-  };
 
   const nombreBody = (row) => {
     const desc = row.descripcion || '';
@@ -47,9 +38,25 @@ const InventarioList = ({ inventarios, onEdit, onDelete }) => {
       ? row.precioUnitario.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })
       : row.precioUnitario;
 
+  const accionesBody = (rowData) => (
+    <div className="flex flex-wrap gap-2">
+      <Button icon="pi pi-plus" className="p-button-success" onClick={() => onIngreso(rowData)} aria-label="Ingreso" />
+      <Button icon="pi pi-history" className="p-button-info" onClick={() => onKardex(rowData)} aria-label="Kárdex" />
+      <Button icon="pi pi-pencil" onClick={() => onEdit(rowData)} aria-label="Editar" />
+      <Button icon="pi pi-trash" className="p-button-danger" onClick={() => openDeleteModal(rowData)} aria-label="Eliminar" />
+    </div>
+  );
+
   return (
     <div className="card">
-      <DataTable value={inventarios} paginator rows={10} className="p-datatable-sm" responsiveLayout="scroll">
+      <DataTable
+        value={inventarios}
+        paginator
+        rows={10}
+        className="p-datatable-sm"
+        responsiveLayout="scroll"
+        emptyMessage="Sin insumos"
+      >
         <Column field="codigo" header="Código" style={{ minWidth: 110 }} />
         <Column header="Nombre / Descripción" body={nombreBody} style={{ minWidth: 260 }} />
         <Column header="Categoría" body={categoriaBody} style={{ minWidth: 150 }} />
@@ -57,19 +64,10 @@ const InventarioList = ({ inventarios, onEdit, onDelete }) => {
         <Column field="cantidadDisponible" header="Cantidad" style={{ minWidth: 110 }} />
         <Column field="unidadDeMedida" header="Unidad" style={{ minWidth: 110 }} />
         <Column header="Precio Unitario" body={precioBody} style={{ minWidth: 150 }} />
-        <Column header="Ingreso" body={(r) => formatDate(r.fechaIngreso)} style={{ minWidth: 140 }} />
-        <Column
-          header="Acciones"
-          body={(rowData) => (
-            <div className="flex gap-2">
-              <Button icon="pi pi-pencil" onClick={() => onEdit(rowData)} />
-              <Button icon="pi pi-trash" className="p-button-danger" onClick={() => openDeleteModal(rowData)} />
-            </div>
-          )}
-          style={{ minWidth: 130 }}
-        />
+        <Column header="Acciones" body={accionesBody} style={{ minWidth: 280 }} />
       </DataTable>
 
+      {/* Modal de confirmación de borrado */}
       <Dialog
         visible={isModalVisible}
         style={{ width: '400px' }}

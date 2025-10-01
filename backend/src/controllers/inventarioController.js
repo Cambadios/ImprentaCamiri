@@ -1,14 +1,14 @@
 // controllers/inventarioController.js
 const Inventario = require('../models/inventario');
 
-
 exports.createProducto = async (req, res) => {
   try {
     const {
       nombre, descripcion, categoriaId,
-      marca, // ← NUEVO
+      marca,
       cantidadDisponible, unidadDeMedida,
-      precioUnitario, fechaIngreso
+      precioUnitario, fechaIngreso,
+      stockMinimo
     } = req.body;
 
     if (!nombre || !descripcion || !categoriaId || cantidadDisponible == null || !unidadDeMedida || precioUnitario == null) {
@@ -19,11 +19,12 @@ exports.createProducto = async (req, res) => {
       nombre,
       descripcion,
       categoria: categoriaId,
-      marca: (marca || '').trim(), // ← NUEVO (opcional)
+      marca: (marca || '').trim(),
       cantidadDisponible,
       unidadDeMedida,
       precioUnitario,
-      fechaIngreso: fechaIngreso || Date.now()
+      fechaIngreso: fechaIngreso || Date.now(),
+      stockMinimo: stockMinimo ?? 0
     });
 
     await inventario.save();
@@ -43,7 +44,7 @@ exports.getProductos = async (req, res) => {
           { nombre:      { $regex: q, $options: 'i' } },
           { descripcion: { $regex: q, $options: 'i' } },
           { codigo:      { $regex: q, $options: 'i' } },
-          { marca:       { $regex: q, $options: 'i' } }, // ← NUEVO
+          { marca:       { $regex: q, $options: 'i' } },
         ] }
       : {};
     const productos = await Inventario.find(where)
@@ -81,19 +82,22 @@ exports.updateProducto = async (req, res) => {
     const { id } = req.params;
     const {
       nombre, descripcion, categoriaId,
-      marca, // ← NUEVO
-      cantidadDisponible, unidadDeMedida,
-      precioUnitario, fechaIngreso
+      marca,
+      // cantidadDisponible, // ❌ no se permite modificar por aquí
+      unidadDeMedida,
+      precioUnitario, fechaIngreso,
+      stockMinimo
     } = req.body;
 
     const update = {
       nombre,
       descripcion,
-      marca: (marca ?? undefined), // ← NUEVO (solo setea si vino en body)
-      cantidadDisponible,
+      marca: (marca ?? undefined),
+      // cantidadDisponible, // ❌ BLOQUEADO
       unidadDeMedida,
       precioUnitario,
-      fechaIngreso
+      fechaIngreso,
+      stockMinimo
     };
     if (categoriaId) update.categoria = categoriaId;
 

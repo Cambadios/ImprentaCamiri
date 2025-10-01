@@ -1,17 +1,14 @@
 import React from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Button } from "primereact/button";
-import { toCanonEstado } from "../../../utils/estados"; // ⬅️ util de estados
+import { Checkbox } from "primereact/checkbox";
+import { toCanonEstado, ORDER_STATES, nextStatesOfForMaquinaria } from "../../../utils/estados";
 
-/**
- * Lista de pedidos (Maquinaria): solo lectura + acción de cambiar estado.
- * Props:
- *  - pedidos: []
- *  - loading: boolean
- *  - onCambiarEstado: (row) => void
- */
-export default function PedidosListMaquinaria({ pedidos = [], loading = false, onCambiarEstado = () => {} }) {
+export default function PedidosListMaquinaria({
+  pedidos = [],
+  loading = false,
+  onCambiarEstado = () => {},
+}) {
   const fullNameBody = (row) => {
     const n = row?.cliente?.nombre ?? "";
     const a = row?.cliente?.apellido ?? "";
@@ -20,9 +17,6 @@ export default function PedidosListMaquinaria({ pedidos = [], loading = false, o
   const phoneBody = (row) => row?.cliente?.telefono ?? "-";
   const productoBody = (row) => row?.producto?.nombre ?? row?.productoNombre ?? "-";
   const cantidadBody = (row) => row?.cantidad ?? "-";
-
-  // ⬇️ mostrar estado ya canónico
-  const estadoBody = (row) => toCanonEstado(row?.estado) || "-";
 
   const fechaBody = (row) => {
     const v = row?.fechaEntrega;
@@ -35,6 +29,35 @@ export default function PedidosListMaquinaria({ pedidos = [], loading = false, o
       month: "short",
       day: "numeric",
     });
+  };
+
+  const estadoChecksBody = (row) => {
+    const current = toCanonEstado(row?.estado) || "Pendiente";
+    const allowedNext = nextStatesOfForMaquinaria(current);
+
+    return (
+      <div className="flex flex-wrap gap-3">
+        {ORDER_STATES.map((st) => {
+          const isCurrent = st === current;
+          const isAllowedNext = allowedNext.includes(st);
+          const disabled = !isCurrent && !isAllowedNext;
+
+          return (
+            <label key={st} className={`inline-flex items-center gap-2 ${disabled ? "opacity-50" : ""}`}>
+              <Checkbox
+                inputId={`${row._id}-${st}`}
+                checked={isCurrent}
+                disabled={disabled}
+                onChange={() => {
+                  if (isAllowedNext) onCambiarEstado(row, st);
+                }}
+              />
+              <span>{st}</span>
+            </label>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -61,23 +84,8 @@ export default function PedidosListMaquinaria({ pedidos = [], loading = false, o
         <Column header="Teléfono" body={phoneBody} />
         <Column header="Producto" body={productoBody} />
         <Column header="Cantidad" body={cantidadBody} style={{ width: "8rem" }} />
-        <Column header="Estado" body={estadoBody} style={{ width: "10rem" }} sortable />
+        <Column header="Estado" body={estadoChecksBody} style={{ minWidth: "22rem" }} />
         <Column header="Fecha Entrega" body={fechaBody} style={{ width: "12rem" }} />
-        <Column
-          header="Acciones"
-          body={(row) => (
-            <div className="flex gap-2">
-              <Button
-                label="Estado"
-                icon="pi pi-pencil"
-                onClick={() => onCambiarEstado(row)}
-                outlined
-              />
-            </div>
-          )}
-          exportable={false}
-          style={{ width: "10rem" }}
-        />
       </DataTable>
     </div>
   );

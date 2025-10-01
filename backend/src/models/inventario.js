@@ -7,11 +7,12 @@ const inventarioSchema = new mongoose.Schema({
   nombre:             { type: String, required: true, trim: true, index: true },
   descripcion:        { type: String, required: true, trim: true },
   categoria:          { type: mongoose.Schema.Types.ObjectId, ref: 'Categoria', required: true, index: true },
-  marca:              { type: String, trim: true, index: true, default: '' },   // ← NUEVO
+  marca:              { type: String, trim: true, index: true, default: '' },
   cantidadDisponible: { type: Number, required: true, min: 0 },
   unidadDeMedida:     { type: String, required: true, trim: true },
   precioUnitario:     { type: Number, required: true, min: 0 },
-  fechaIngreso:       { type: Date, default: Date.now }
+  fechaIngreso:       { type: Date, default: Date.now },
+  stockMinimo:        { type: Number, min: 0, default: 0 } // opcional
 }, { timestamps: true });
 
 inventarioSchema.pre('save', async function (next) {
@@ -29,5 +30,11 @@ inventarioSchema.pre('save', async function (next) {
     next(err);
   }
 });
+
+// Índice único “clave natural” para evitar duplicados accidentales de materiales
+inventarioSchema.index(
+  { nombre: 1, marca: 1, unidadDeMedida: 1, categoria: 1 },
+  { unique: true, name: 'uk_insumo_natural' }
+);
 
 module.exports = mongoose.model('Inventario', inventarioSchema);

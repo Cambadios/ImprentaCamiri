@@ -14,6 +14,12 @@ const pagoSchema = new mongoose.Schema({
   fecha:  { type: Date, default: Date.now }
 }, { _id: false });
 
+const materialConsumoSchema = new mongoose.Schema({
+  insumo:   { type: mongoose.Schema.Types.ObjectId, ref: 'Inventario', required: true },
+  cantidad: { type: Number, required: true, min: 0 },
+  unidad:   { type: String, trim: true }
+}, { _id: false });
+
 const pedidoSchema = new mongoose.Schema({
   cliente:  { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', required: true, index: true },
   producto: { type: mongoose.Schema.Types.ObjectId, ref: 'Producto', required: true, index: true },
@@ -23,7 +29,7 @@ const pedidoSchema = new mongoose.Schema({
 
   cantidad: { type: Number, required: true, min: 1 },
 
-  // NUEVOS ESTADOS (FSM): no se puede retroceder ni saltar.
+  // NUEVOS ESTADOS (FSM)
   estado: {
     type: String,
     enum: ['Pendiente', 'En Produccion', 'Hecho', 'Entregado'],
@@ -47,7 +53,15 @@ const pedidoSchema = new mongoose.Schema({
   },
 
   fechaEntrega: { type: Date }, // fecha prometida
-  entregadoEn:  { type: Date }, // fecha real de entrega (solo para lógica interna antes de eliminar)
+  entregadoEn:  { type: Date }, // fecha real de entrega (si decides guardar)
+
+  // === NUEVO ===
+  // Marca si ya registramos el movimiento SALIDA al pasar a "Hecho"
+  procesadoSalida: { type: Boolean, default: false, index: true },
+
+  // Snapshot de materiales consumidos (para mostrar detalles)
+  materialesConsumidos: { type: [materialConsumoSchema], default: [] },
+
 }, { timestamps: true });
 
 // Índices adicionales para orden/consultas

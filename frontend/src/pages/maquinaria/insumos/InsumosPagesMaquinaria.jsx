@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
-import InsumosListMaquinaria from "./InsumosListMaquinaria.jsx";
+import InsumosListMaquinaria from "../insumos/InsumosListMaquinaria.jsx";
+import SalidasModal from "../insumos/modals/SalidasModal.jsx";
 import { apiFetch } from "../../../api/http";
 
 export default function InsumosPagesMaquinaria() {
@@ -12,6 +13,8 @@ export default function InsumosPagesMaquinaria() {
 
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
+
+  const [openSalidas, setOpenSalidas] = useState(false);
 
   // Debounce 250 ms
   useEffect(() => {
@@ -54,7 +57,6 @@ export default function InsumosPagesMaquinaria() {
   const catStr = (cat) => {
     if (!cat) return "";
     if (typeof cat === "string") return cat;
-    // objeto poblado
     const nombre = s(cat?.nombre);
     const prefijo = s(cat?.prefijo);
     return `${nombre} ${prefijo}`.trim();
@@ -66,12 +68,11 @@ export default function InsumosPagesMaquinaria() {
       const campos = [
         s(i?.nombre),
         s(i?.descripcion),
-        catStr(i?.categoria),   // ← usa nombre/prefijo si viene poblado
+        catStr(i?.categoria),
         s(i?.codigo),
         s(i?.unidadDeMedida),
-        s(i?.marca),            // ya que agregaste marca
-      ]
-        .map((x) => x.toLowerCase());
+        s(i?.marca),
+      ].map((x) => x.toLowerCase());
       return campos.some((x) => x.includes(debounced));
     });
   }, [insumos, debounced]);
@@ -80,7 +81,7 @@ export default function InsumosPagesMaquinaria() {
     <div className="space-y-3">
       <Toast ref={toast} />
 
-      {/* Barra simple (buscar + refrescar) */}
+      {/* Barra superior: buscar + refrescar + ver salidas */}
       <div className="bg-white rounded-lg shadow p-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <span className="text-base font-semibold">Buscar insumos</span>
         <div className="flex gap-2">
@@ -100,11 +101,20 @@ export default function InsumosPagesMaquinaria() {
             outlined
             disabled={loading}
           />
+          <Button
+            label="Ver salidas"
+            icon="pi pi-external-link"
+            severity="help"
+            onClick={() => setOpenSalidas(true)}
+          />
         </div>
       </div>
 
       {/* Tabla */}
       <InsumosListMaquinaria insumos={filtered} loading={loading} />
+
+      {/* Modal: movimientos tipo SALIDA */}
+      <SalidasModal open={openSalidas} onClose={() => setOpenSalidas(false)} />
     </div>
   );
 }

@@ -3,12 +3,14 @@ import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Dialog } from "primereact/dialog";
-import PedidosListMaquinaria from "./PedidosListMaquinaria.jsx";
-import { apiFetch } from "../../../api/http";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
 
-// ⬇️ estados canónicos
-import EstadoDropdown from "../../../components/EstadoDropdwon.jsx";
-import { toCanonEstado, toCanonStrict } from "../../../utils/estados";
+import PedidosListMaquinaria from "./PedidosListMaquinaria.jsx";
+import SalidasModalPedidos from "./modals/SalidasModalPedidos.jsx";
+
+import { apiFetch } from "../../../api/http";
+import { toCanonEstado, toCanonStrict, nextStatesOfForMaquinaria } from "../../../utils/estados";
 
 const normalizeDigits = (v) => (v ? String(v).replace(/\D+/g, "") : "");
 const s = (v) => (v == null ? "" : String(v));
@@ -18,16 +20,16 @@ export default function PedidosPagesMaquinaria() {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // búsqueda
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
 
-  // diálogo de estado
-  const [dlgOpen, setDlgOpen] = useState(false);
-  const [pedidoSel, setPedidoSel] = useState(null);
-  const [nuevoEstado, setNuevoEstado] = useState("");
+  // modal de detalle individual
+  const [openDetalle, setOpenDetalle] = useState(false);
+  const [detalle, setDetalle] = useState(null);
 
-  // debounce
+  // modal de salidas (global)
+  const [openSalidas, setOpenSalidas] = useState(false);
+
   useEffect(() => {
     const id = setTimeout(() => setDebounced(search.trim().toLowerCase()), 250);
     return () => clearTimeout(id);
@@ -69,45 +71,70 @@ export default function PedidosPagesMaquinaria() {
     });
   }, [pedidos, debounced]);
 
-  const abrirCambioEstado = (pedido) => {
-    setPedidoSel(pedido);
-    // ⬇️ normaliza lo que venga del back para mostrarlo
-    setNuevoEstado(toCanonEstado(pedido?.estado) || "");
-    setDlgOpen(true);
-  };
+  // Cambiar estado
+  const onCambiarEstado = async (row, nuevoEstadoRaw) => {
+    const current = toCanonEstado(row?.estado);
+    const allowedNext = nextStatesOfForMaquinaria(current);
+    const destino = toCanonStrict(nuevoEstadoRaw || "");
 
-  const actualizarEstado = async () => {
-    if (!pedidoSel?._id) return;
+    if (!destino || !allowedNext.includes(destino)) {
+      const msg = allowedNext.length
+        ? `Solo puedes avanzar al siguiente estado: ${allowedNext.join(", ")}`
+        : "Este pedido ya está en su último estado (Hecho).";
+      toast.current?.show({ severity: "warn", summary: "No permitido", detail: msg, life: 4000 });
+      return;
+    }
+
     try {
       setLoading(true);
-      const estadoCanon = toCanonStrict(nuevoEstado || pedidoSel.estado);
-      const resp = await apiFetch(`/pedidos/${pedidoSel._id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ estado: estadoCanon }),
+      const resp = await apiFetch(`/pedidos/${row._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: destino }),
       });
 
-      // parse flexible
-      let updated = null;
+      let payload = null;
       try {
         const json = await resp.json();
-        updated = json?.data ?? json ?? null;
+        payload = json?.data ?? json ?? null;
       } catch {
-        updated = null;
+        payload = null;
       }
 
-      if (!resp.ok || !updated) {
+      if (!resp.ok) {
         toast.current?.show({
           severity: "error",
           summary: "No se pudo actualizar el estado",
-          life: 5000,
+          detail: payload?.message || `HTTP ${resp.status || ""}`,
+          life: 6000,
         });
         return;
       }
 
-      setPedidos((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
-      toast.current?.show({ severity: "success", summary: "Estado actualizado", life: 2000 });
-      setDlgOpen(false);
-      setPedidoSel(null);
+      if (payload?.deleted) {
+        setPedidos((prev) => prev.filter((p) => p._id !== row._id));
+        toast.current?.show({
+          severity: "success",
+          summary: "Pedido entregado",
+          detail: "Se marcó como Entregado y fue eliminado.",
+          life: 3500,
+        });
+        return;
+      }
+
+      setPedidos((prev) => prev.map((p) => (p._id === payload._id ? payload : p)));
+      toast.current?.show({ severity: "success", summary: "Estado actualizado", life: 1800 });
+
+      if (payload?._salidaRegistrada && Array.isArray(payload?._materialesConsumidos)) {
+        setDetalle({
+          pedidoId: payload._id,
+          cliente: `${s(payload?.cliente?.nombre)} ${s(payload?.cliente?.apellido)}`.trim(),
+          producto: s(payload?.producto?.nombre || ""),
+          cantidad: payload?.cantidad,
+          materialesConsumidos: payload._materialesConsumidos,
+        });
+        setOpenDetalle(true);
+      }
     } catch (e) {
       console.error(e);
       toast.current?.show({
@@ -121,11 +148,36 @@ export default function PedidosPagesMaquinaria() {
     }
   };
 
+  const DetalleMateriales = () => {
+    if (!detalle) return null;
+    return (
+      <Dialog
+        header="Salida registrada (Pedido Hecho)"
+        visible={openDetalle}
+        style={{ width: "720px", maxWidth: "96vw" }}
+        modal
+        onHide={() => setOpenDetalle(false)}
+      >
+        <DataTable
+          value={detalle.materialesConsumidos || []}
+          className="p-datatable-sm"
+          responsiveLayout="scroll"
+          emptyMessage="Sin materiales"
+        >
+          <Column header="#" body={(_, { rowIndex }) => rowIndex + 1} style={{ width: "4rem" }} />
+          <Column field="insumo" header="Insumo (ID)" style={{ minWidth: 220 }} />
+          <Column field="cantidad" header="Cantidad" style={{ width: 120 }} />
+          <Column field="unidad" header="Unidad" style={{ width: 120 }} />
+        </DataTable>
+      </Dialog>
+    );
+  };
+
   return (
     <div className="space-y-3">
       <Toast ref={toast} />
 
-      {/* Barra simple: buscar + refrescar */}
+      {/* Barra superior */}
       <div className="bg-white rounded-lg shadow p-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <span className="text-base font-semibold">Buscar pedidos</span>
         <div className="flex gap-2">
@@ -145,6 +197,12 @@ export default function PedidosPagesMaquinaria() {
             outlined
             disabled={loading}
           />
+          <Button
+            label="Ver salidas"
+            icon="pi pi-external-link"
+            severity="help"
+            onClick={() => setOpenSalidas(true)}
+          />
         </div>
       </div>
 
@@ -152,58 +210,12 @@ export default function PedidosPagesMaquinaria() {
       <PedidosListMaquinaria
         pedidos={filtered}
         loading={loading}
-        onCambiarEstado={abrirCambioEstado}
+        onCambiarEstado={onCambiarEstado}
       />
 
-      {/* Dialogo cambiar estado */}
-      <Dialog
-        visible={dlgOpen}
-        header="Cambiar estado del pedido"
-        style={{ width: "450px" }}
-        modal
-        onHide={() => {
-          setDlgOpen(false);
-          setPedidoSel(null);
-        }}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button
-              label="Cancelar"
-              icon="pi pi-times"
-              className="p-button-outlined p-button-secondary"
-              onClick={() => {
-                setDlgOpen(false);
-                setPedidoSel(null);
-              }}
-            />
-            <Button
-              label="Actualizar"
-              icon="pi pi-check"
-              onClick={actualizarEstado}
-              disabled={!nuevoEstado || loading}
-            />
-          </div>
-        }
-      >
-        <div className="space-y-3">
-          <div>
-            <div className="text-sm text-gray-600">Pedido</div>
-            <div className="font-medium">
-              {s(pedidoSel?.cliente?.nombre)} {s(pedidoSel?.cliente?.apellido)} —{" "}
-              {s(pedidoSel?.producto?.nombre) || s(pedidoSel?.productoNombre) || "Producto"}
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm">Estado</label>
-            {/* ⬇️ selector canónico (solo 4 opciones) */}
-            <EstadoDropdown
-              value={nuevoEstado}
-              onChange={setNuevoEstado}
-              placeholder="Selecciona estado"
-            />
-          </div>
-        </div>
-      </Dialog>
+      {/* Modales */}
+      <DetalleMateriales />
+      <SalidasModalPedidos open={openSalidas} onClose={() => setOpenSalidas(false)} />
     </div>
   );
 }

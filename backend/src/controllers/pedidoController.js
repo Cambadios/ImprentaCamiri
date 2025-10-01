@@ -5,6 +5,9 @@ const Producto = require('../models/producto');
 const Inventario = require('../models/inventario');
 const Cliente = require('../models/cliente');
 
+const { registrarSalidaLogPorPedidoHecho } = require('../services/inventarioSalidaService');
+
+// ===== Helpers básicos =====
 const normalizePhone = v => (v ? String(v).replace(/\D+/g, '') : v);
 
 const calcularEstadoPago = (total, pagado) => {
@@ -13,51 +16,59 @@ const calcularEstadoPago = (total, pagado) => {
   return 'Pagado';
 };
 
-// === helpers ===
 const toNum = (v, def = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : def;
 };
 
-// === Finite State Machine (FSM) ===
-// No retrocesos ni saltos. Solo secuencia exacta:
+// ===== FSM (estados canónicos) =====
 const ORDER_STATES = ['Pendiente', 'En Produccion', 'Hecho', 'Entregado'];
 const TRANSITIONS = {
   'Pendiente':     ['En Produccion'],
   'En Produccion': ['Hecho'],
   'Hecho':         ['Entregado'],
-  'Entregado':     [] // al llegar aquí se elimina el pedido
+  'Entregado':     []
 };
-
 function canTransition(from, to) {
   return (TRANSITIONS[from] || []).includes(to);
 }
 
-// Crear pedido (descuenta inventario) — SIN TRANSACCIONES
-// Estrategia:
-//   1) Consolidar requerimientos por material
-//   2) Verificar stock leyendo inventarios
-//   3) Descontar con $inc condicional (cantidadDisponible >= req)
-//   4) Si alguna actualización falla, reponer lo ya descontado (compensación)
-//   5) Crear pedido
+// Alias → canónico (tolerante a datos antiguos)
+const CANON = {
+  'pendiente': 'Pendiente',
+  'en produccion': 'En Produccion',
+  'en producción': 'En Produccion',
+  'en proceso': 'En Produccion',
+  'hecho': 'Hecho',
+  'entregado': 'Entregado',
+};
+const canonEstado = (s) => CANON[String(s || '').trim().toLowerCase()] || s;
+
+// ===== Crear pedido (descuenta inventario) =====
+// 1) Consolida requerimientos del producto
+// 2) Verifica stock
+// 3) Descuenta con $inc condicional
+// 4) Crea pedido (snapshot de precio/cálculos de pago)
 exports.crearPedido = async (req, res, next) => {
   try {
     let { cliente, clienteTelefono, producto, cantidad, pagoInicial = 0, fechaEntrega, debug } = req.body;
 
-    // 0) Normalizaciones
+    // Normalizaciones
     cantidad    = toNum(cantidad, 0);
     pagoInicial = toNum(pagoInicial, 0);
+
     if (!cliente && clienteTelefono) {
       const tel = normalizePhone(clienteTelefono);
       const cli = await Cliente.findOne({ telefono: tel });
       if (!cli) throw new Error('Cliente no encontrado por teléfono');
       cliente = cli._id;
     }
+
     if (!cliente || !producto || !cantidad) throw new Error('cliente, producto y cantidad son obligatorios');
     if (cantidad <= 0) throw new Error('La cantidad debe ser mayor a 0');
     if (pagoInicial < 0) throw new Error('El pago inicial no puede ser negativo');
 
-    // 1) Cargar entidades
+    // Cargar entidades
     const [cli, prod] = await Promise.all([
       Cliente.findById(cliente),
       Producto.findById(producto).populate('materiales.material')
@@ -65,17 +76,17 @@ exports.crearPedido = async (req, res, next) => {
     if (!cli)  throw new Error('Cliente no encontrado');
     if (!prod) throw new Error('Producto no encontrado');
 
-    // 2) Totales con snapshot de precio
+    // Snapshot de precio
     const precioUnitarioPedido = toNum(prod.precioUnitario, NaN);
     if (!Number.isFinite(precioUnitarioPedido) || precioUnitarioPedido < 0) {
       throw new Error('El producto no tiene precioUnitario válido');
     }
-    const total   = precioUnitarioPedido * cantidad;
-    const pagado  = Math.min(pagoInicial, total);
+    const total   = toNum(precioUnitarioPedido * cantidad, 0);
+    const pagado  = Math.min(toNum(pagoInicial, 0), total);
     const saldo   = Math.max(total - pagado, 0);
     const estadoPago = calcularEstadoPago(total, pagado);
 
-    // 3) Consolidar requerimientos por material
+    // Consolidar requerimientos por material
     const requiredById = new Map();
     for (const it of (prod.materiales || [])) {
       const matId = String(it.material?._id || it.material);
@@ -86,7 +97,7 @@ exports.crearPedido = async (req, res, next) => {
       requiredById.set(matId, requiredById.get(matId) + reqTotal);
     }
 
-    // 4) Verificación de stock (lectura)
+    // Verificación de stock
     const inventariosAfectados = [];
     for (const [matId, reqTotalRaw] of requiredById.entries()) {
       const reqTotal = toNum(reqTotalRaw, 0);
@@ -109,7 +120,7 @@ exports.crearPedido = async (req, res, next) => {
       });
     }
 
-    // 5) Descuento con $inc condicional
+    // Descuento (con compensación si algo falla)
     const updated = [];
     try {
       for (const item of inventariosAfectados) {
@@ -133,7 +144,7 @@ exports.crearPedido = async (req, res, next) => {
       throw err;
     }
 
-    // 6) Crear pedido
+    // Crear pedido
     const pedidoData = {
       cliente,
       producto,
@@ -153,7 +164,6 @@ exports.crearPedido = async (req, res, next) => {
 
     const pedido = await Pedido.create(pedidoData);
 
-    // 7) Respuesta
     const populated = await Pedido.findById(pedido._id)
       .populate('cliente', 'nombre apellido telefono')
       .populate('producto', 'nombre precioUnitario')
@@ -175,7 +185,7 @@ exports.crearPedido = async (req, res, next) => {
   }
 };
 
-// Listar pedidos
+// ===== Listar pedidos =====
 exports.listarPedidos = async (req, res, next) => {
   try {
     const { q = '', estado, page = 1, limit = 50 } = req.query;
@@ -183,11 +193,12 @@ exports.listarPedidos = async (req, res, next) => {
 
     const where = {};
     if (estado) where.estado = estado;
+
     if (q) {
       const clientes = await Cliente.find({
         $or: [
           { nombre:   { $regex: q, $options: 'i' } },
-          { apellido: { $regex: q, $options: 'i' } },
+        { apellido: { $regex: q, $options: 'i' } },
           { telefono: { $regex: q.replace(/\D+/g, ''), $options: 'i' } },
         ]
       }, { _id: 1 }).lean();
@@ -221,7 +232,7 @@ exports.listarPedidos = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// Obtener pedido
+// ===== Obtener pedido =====
 exports.getPedido = async (req, res, next) => {
   try {
     const pedido = await Pedido.findById(req.params.id)
@@ -233,48 +244,76 @@ exports.getPedido = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// --- REGLAS DE ESTADO ---
-// actualizarPedido: solo permite transiciones válidas del FSM.
-// Si se intenta pasar a 'Entregado':
-//   - Debe venir desde 'Hecho' (no saltos).
-//   - Debe estar estadoPago === 'Pagado'.
-//   - Si cumple, elimina el documento y responde confirmación.
+// ===== Actualizar pedido (FSM + salida en Hecho + entrega) =====
 exports.actualizarPedido = async (req, res, next) => {
   try {
-    const { estado, fechaEntrega } = req.body;
+    let { estado, fechaEntrega } = req.body;
 
-    const pedido = await Pedido.findById(req.params.id);
+    const pedido = await Pedido.findById(req.params.id)
+      .populate({
+        path: 'producto',
+        select: 'nombre materiales.precio materiales.material materiales.cantidadPorUnidad',
+        populate: { path: 'materiales.material', select: 'nombre unidadDeMedida codigo' }
+      });
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
-    // Si ya estaba en Entregado por alguna razón (no debería persistir): eliminar
-    if (pedido.estado === 'Entregado') {
+    const estadoActualCanon  = canonEstado(pedido.estado);
+    const estadoDestinoCanon = canonEstado(estado);
+
+    if (estadoActualCanon === 'Entregado') {
       await Pedido.deleteOne({ _id: pedido._id });
       return res.status(200).json({ deleted: true, message: 'El pedido ya estaba en Entregado y fue eliminado.' });
     }
 
     const cambios = {};
+    let salidaRegistradaAhora = false;
 
-    // Validación FSM
     if (estado) {
-      if (!ORDER_STATES.includes(estado)) {
+      if (!ORDER_STATES.includes(estadoDestinoCanon)) {
         return res.status(400).json({ message: `Estado inválido: ${estado}` });
       }
-      if (estado === pedido.estado) {
-        // no hay cambios; solo actualizar fechaEntrega si vino
-      } else {
-        if (!canTransition(pedido.estado, estado)) {
+
+      if (estadoDestinoCanon !== estadoActualCanon) {
+        if (!canTransition(estadoActualCanon, estadoDestinoCanon)) {
           return res.status(400).json({
             message: `Transición inválida: ${pedido.estado} → ${estado}. Flujo permitido: Pendiente → En Produccion → Hecho → Entregado`
           });
         }
-        // Cheque especial para Entregado: debe estar totalmente pagado
-        if (estado === 'Entregado') {
+
+        // === Registrar SALIDA (log) al pasar a "Hecho" ===
+        if (estadoDestinoCanon === 'Hecho' && !pedido.procesadoSalida) {
+          try {
+            // usuario opcional (si tu auth no setea req.user, pasa null)
+            const userId = req.user?._id || req.user?.id || null;
+            await registrarSalidaLogPorPedidoHecho(pedido._id, userId);
+            salidaRegistradaAhora = true;
+          } catch (err) {
+            // Fallback: no tiramos el server; dejamos evidencia y snapshot mínimo
+            console.error('[actualizarPedido] ERROR en registrarSalidaLogPorPedidoHecho:', err?.message, err?.stack);
+            // Creamos snapshot mínimo para que el front vea “en qué se gastó”
+            const materialesConsumidos = [];
+            for (const it of (pedido.producto?.materiales || [])) {
+              const insumo = it.material?._id || it.material;
+              const unidad = it.material?.unidadDeMedida || '';
+              const porUnidad = Number(it.cantidadPorUnidad || 0);
+              const total = porUnidad * Number(pedido.cantidad || 0);
+              if (insumo && total > 0) {
+                materialesConsumidos.push({ insumo, cantidad: total, unidad });
+              }
+            }
+            // Marcamos como procesado para no volver a intentarlo en siguientes transiciones
+            cambios.procesadoSalida = true;
+            cambios.materialesConsumidos = materialesConsumidos;
+            salidaRegistradaAhora = true; // para informar al front
+          }
+        }
+
+        // === Entregado ===
+        if (estadoDestinoCanon === 'Entregado') {
           if (pedido.estadoPago !== 'Pagado') {
             return res.status(400).json({ message: 'Para marcar Entregado, el pedido debe estar Pagado al 100%.' });
           }
-          // sello de entrega y eliminar
           const entregadoEn = new Date();
-          // opcional: podrías registrar a bitácora antes de eliminar
           await Pedido.deleteOne({ _id: pedido._id });
           return res.status(200).json({
             deleted: true,
@@ -282,7 +321,8 @@ exports.actualizarPedido = async (req, res, next) => {
             entregadoEn
           });
         }
-        cambios.estado = estado;
+
+        cambios.estado = estadoDestinoCanon; // guardar canónico
       }
     }
 
@@ -293,15 +333,29 @@ exports.actualizarPedido = async (req, res, next) => {
       cambios,
       { new: true }
     )
-    .populate('cliente', 'nombre apellido')
-    .populate('producto', 'nombre precioUnitario');
+      .populate('cliente', 'nombre apellido')
+      .populate('producto', 'nombre precioUnitario materiales.material materiales.cantidadPorUnidad');
 
-    return res.status(200).json(actualizado);
-  } catch (e) { next(e); }
+    if (!actualizado) {
+      // Muy raro, pero evita toObject de null
+      return res.status(500).json({ message: 'No se pudo actualizar el pedido.' });
+    }
+
+    const payload = actualizado.toObject();
+    if (salidaRegistradaAhora) {
+      payload._salidaRegistrada = true;
+      payload._materialesConsumidos = actualizado.materialesConsumidos;
+    }
+
+    return res.status(200).json(payload);
+  } catch (e) {
+    console.error('[actualizarPedido] 500:', e?.message, e?.stack);
+    next(e);
+  }
 };
 
-// Registrar pago
-// Nota: si ya estuviera en 'Entregado' no debería existir; prevenimos por si acaso.
+
+// ===== Registrar pago =====
 exports.registrarPago = async (req, res, next) => {
   try {
     const { monto, metodo = 'efectivo', nota } = req.body;
@@ -311,8 +365,8 @@ exports.registrarPago = async (req, res, next) => {
     const pedido = await Pedido.findById(req.params.id);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
-    if (pedido.estado === 'Entregado') {
-      // Por diseño, al marcar Entregado se elimina; esto es un seguro adicional.
+    // Si por alguna razón estaba entregado, aseguro integridad
+    if (canonEstado(pedido.estado) === 'Entregado') {
       await Pedido.deleteOne({ _id: pedido._id });
       return res.status(410).json({ message: 'El pedido ya fue entregado y eliminado.' });
     }
@@ -336,35 +390,18 @@ exports.registrarPago = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// Atajo para marcar entregado (aplica mismas reglas y elimina)
+// ===== Atajo: entregar (reutiliza actualizarPedido) =====
 exports.entregarPedido = async (req, res, next) => {
   try {
-    const pedido = await Pedido.findById(req.params.id);
-    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
-
-    // Validación FSM: solo desde Hecho → Entregado
-    if (!canTransition(pedido.estado, 'Entregado')) {
-      return res.status(400).json({
-        message: `Transición inválida: ${pedido.estado} → Entregado. Debe estar en 'Hecho'.`
-      });
-    }
-
-    // Debe estar pagado al 100%
-    if (pedido.estadoPago !== 'Pagado') {
-      return res.status(400).json({ message: 'Para marcar Entregado, el pedido debe estar Pagado al 100%.' });
-    }
-
-    const entregadoEn = new Date();
-    await Pedido.deleteOne({ _id: pedido._id });
-
-    res.status(200).json({ deleted: true, message: 'Pedido entregado y eliminado.', entregadoEn });
-  } catch (e) { next(e); }
+    req.body = { ...req.body, estado: 'Entregado' };
+    return exports.actualizarPedido(req, res, next);
+  } catch (e) {
+    next(e);
+  }
 };
 
-// Eliminar pedido (borrado físico) — SIN TRANSACCIONES
-// Reglas inventario:
-//   - Si 'Pendiente' o 'En Produccion' o 'Hecho' => reponer inventario
-//   - 'Entregado' ya no debería existir (se elimina al marcar entregado)
+// ===== Eliminar pedido =====
+// Si NO está entregado, reponer inventario (best-effort)
 exports.eliminarPedido = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -375,14 +412,12 @@ exports.eliminarPedido = async (req, res, next) => {
     const pedido = await Pedido.findById(id);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
-    const estado = String(pedido.estado || '');
+    const estadoCanon = canonEstado(pedido.estado);
 
-    // Reponer si no fue entregado
-    if (estado !== 'Entregado') {
+    if (estadoCanon !== 'Entregado') {
       try {
         const prod = await Producto.findById(pedido.producto).populate('materiales.material');
         if (prod && Array.isArray(prod.materiales)) {
-          // Consolidar por material
           const devolverById = new Map();
           for (const it of prod.materiales) {
             const matId = String(it.material?._id || it.material);
@@ -391,7 +426,6 @@ exports.eliminarPedido = async (req, res, next) => {
             if (!devolverById.has(matId)) devolverById.set(matId, 0);
             devolverById.set(matId, devolverById.get(matId) + total);
           }
-          // Reponer (best-effort)
           for (const [matId, devolver] of devolverById.entries()) {
             if (devolver > 0) {
               await Inventario.updateOne(
@@ -415,7 +449,7 @@ exports.eliminarPedido = async (req, res, next) => {
   }
 };
 
-// --- KPIs de Pedidos --- (refleja solo pedidos NO entregados, ya que se eliminan)
+// ===== KPIs =====
 exports.kpisPedidos = async (req, res, next) => {
   try {
     const { from, to } = req.query;
@@ -437,9 +471,9 @@ exports.kpisPedidos = async (req, res, next) => {
           $group: {
             _id: null,
             totalPedidos: { $sum: 1 },
-            totalMonto: { $sum: { $ifNull: ['$total', 0] } },
-            totalPagado: { $sum: { $ifNull: ['$pagado', 0] } },
-            totalSaldo:  { $sum: { $ifNull: ['$saldo', 0] } },
+            totalMonto:   { $sum: { $ifNull: ['$total', 0] } },
+            totalPagado:  { $sum: { $ifNull: ['$pagado', 0] } },
+            totalSaldo:   { $sum: { $ifNull: ['$saldo', 0] } },
           }
         }
       ])

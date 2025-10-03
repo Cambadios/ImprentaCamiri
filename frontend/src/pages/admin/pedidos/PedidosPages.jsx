@@ -120,11 +120,14 @@ const PedidoPage = () => {
       const full = `${nom} ${ape}`.trim();
       const tel = normalizeDigits(safeStr(p?.cliente?.telefono));
       const matchText =
-        !term || full.includes(term) || (termDigits && tel.includes(termDigits));
+        !term ||
+        full.includes(term) ||
+        (termDigits && tel.includes(termDigits));
 
       const matchEstado =
         !estadoFilter ||
-        safeStr(p?.estado).toLowerCase() === safeStr(estadoFilter).toLowerCase();
+        safeStr(p?.estado).toLowerCase() ===
+          safeStr(estadoFilter).toLowerCase();
 
       return matchText && matchEstado;
     });
@@ -170,13 +173,75 @@ const PedidoPage = () => {
         const body = {};
         if (payload.fechaEntrega !== undefined)
           body.fechaEntrega = payload.fechaEntrega;
-        if (
-          payload.estado &&
-          payload.estado !== safeStr(pedidoEdit.estado)
-        ) {
+        if (payload.estado && payload.estado !== safeStr(pedidoEdit.estado)) {
           body.estado = payload.estado;
         }
 
+        // --- NUEVO: si hay delta de pago, primero registrar pago ---
+        if (payload._pagoDelta && payload._pagoDelta > 0) {
+          try {
+            const respPago = await apiFetch(`/pedidos/${pedidoEdit._id}/pagos`, {
+              method: "POST",
+              body: JSON.stringify({
+                monto: payload._pagoDelta,
+                metodo: payload._pagoMetodo || "efectivo",
+                nota: payload._pagoNota || "Pago registrado desde edición",
+              }),
+            });
+            const { ok: okPago, data: dataPago } = await parseResponse(
+              respPago
+            );
+            if (!okPago) {
+              toast.current?.show({
+                severity: "error",
+                summary: "No se pudo registrar el pago",
+                detail: dataPago?.message || "Error desconocido",
+                life: 6000,
+              });
+              return false;
+            }
+
+            // Actualiza en memoria el pedido con el resultado del pago
+            if (dataPago?._id) {
+              setPedidos((prev) =>
+                prev.map((p) =>
+                  p._id === dataPago._id
+                    ? {
+                        ...p,
+                        ...dataPago,
+                        cliente: {
+                          ...(p.cliente || {}),
+                          ...(dataPago.cliente || {}),
+                        },
+                      }
+                    : p
+                )
+              );
+            }
+          } catch (e) {
+            toast.current?.show({
+              severity: "error",
+              summary: "Error registrando el pago",
+              detail: e?.message || "Error de red",
+              life: 6000,
+            });
+            return false;
+          }
+        }
+
+        // Si no hay cambios de estado/fecha, ya terminamos
+        if (!Object.keys(body).length) {
+          toast.current?.show({
+            severity: "success",
+            summary: "Pago registrado",
+            life: 2500,
+          });
+          setModalVisible(false);
+          setPedidoEdit(null);
+          return true;
+        }
+
+        // PATCH de actualización (estado/fecha)
         const resp = await apiFetch(`/pedidos/${pedidoEdit._id}`, {
           method: "PATCH",
           body: JSON.stringify(body),
@@ -208,7 +273,18 @@ const PedidoPage = () => {
         }
 
         // Actualización normal
-        setPedidos((prev) => prev.map((p) => (p._id === data._id ? data : p)));
+        setPedidos((prev) =>
+          prev.map((p) =>
+            p._id === data._id
+              ? {
+                  ...p,
+                  ...data,
+                  cliente: { ...(p.cliente || {}), ...(data.cliente || {}) },
+                }
+              : p
+          )
+        );
+
         toast.current?.show({
           severity: "success",
           summary: "Pedido actualizado",
@@ -236,7 +312,10 @@ const PedidoPage = () => {
         }
 
         // Mostrar/registrar el detalle de descuento si viene del back
-        if (Array.isArray(data?._debugDescuento) && data._debugDescuento.length) {
+        if (
+          Array.isArray(data?._debugDescuento) &&
+          data._debugDescuento.length
+        ) {
           console.table(data._debugDescuento);
         }
 

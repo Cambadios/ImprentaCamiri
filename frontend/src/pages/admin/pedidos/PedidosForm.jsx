@@ -21,17 +21,17 @@ const sanitizeCantidad = (val) => {
 // === FSM (igual que en backend) ===
 const ORDER_STATES = ["Pendiente", "En Produccion", "Hecho", "Entregado"];
 const TRANSITIONS = {
-  "Pendiente": ["En Produccion"],
+  Pendiente: ["En Produccion"],
   "En Produccion": ["Hecho"],
-  "Hecho": ["Entregado"],
-  "Entregado": []
+  Hecho: ["Entregado"],
+  Entregado: [],
 };
 const nextStatesOf = (from) => TRANSITIONS[from] || [];
 
 const PedidosForm = ({
   visible,
   onHide,
-  onSave,          // ← se espera que devuelva una Promise<boolean>
+  onSave, // ← se espera que devuelva una Promise<boolean>
   pedidoEdit,
   clientes = [],
   productos = [],
@@ -167,19 +167,40 @@ const PedidosForm = ({
     if (isEdit) {
       // Solo enviamos el estado si el usuario decide avanzar (siguiente permitido)
       const payload = {
-        fechaEntrega: fechaEntrega || null
+        fechaEntrega: fechaEntrega || null,
       };
       if (estadoSiguiente && allowedNextStates.includes(estadoSiguiente)) {
         payload.estado = estadoSiguiente;
       }
+
+      // --- NUEVO: manejo de pagos en edición ---
+      const pagadoActual = Number(pedidoEdit?.pagado || 0);
+      const nuevoPagadoDeseado = Number(pagoCliente || 0);
+      const delta = Math.round((nuevoPagadoDeseado - pagadoActual) * 100) / 100;
+
+      if (delta < 0) {
+        alert(
+          "No se puede reducir el pago ya registrado. Si necesitas corregirlo, haz una nota interna o maneja un ajuste administrativo."
+        );
+        return;
+      }
+      if (delta > 0) {
+        // El parent hará la llamada a /pedidos/:id/pago
+        payload._pagoDelta = delta;
+        payload._pagoMetodo = "efectivo"; // ajusta si ofreces más métodos
+        payload._pagoNota = "Ajuste desde edición del pedido";
+      }
+
       try {
         setSubmitting(true);
-        const ok = await onSave(payload);
-        if (!ok) setSubmitting(false);
-      } catch (e) {console.log(e)
+        const ok = await onSave(payload); console.log(ok)
         setSubmitting(false);
+        return;
+      } catch (e) {
+        console.log(e);
+        setSubmitting(false);
+        return;
       }
-      return;
     }
 
     // CREACIÓN: Estado automático = 'Pendiente' (el backend lo pone por defecto)
@@ -188,7 +209,7 @@ const PedidosForm = ({
       producto: productoId,
       cantidad: qty,
       pagoInicial: Number(pagoCliente || 0),
-      fechaEntrega: fechaEntrega || null
+      fechaEntrega: fechaEntrega || null,
       // NO mandamos estado: el back asigna 'Pendiente'
     };
 
@@ -196,7 +217,8 @@ const PedidosForm = ({
       setSubmitting(true);
       const ok = await onSave(payloadCreate);
       if (!ok) setSubmitting(false);
-    } catch (e) {console.log(e)
+    } catch (e) {
+      console.log(e);
       setSubmitting(false);
     }
   };
@@ -240,7 +262,9 @@ const PedidosForm = ({
           <InputText
             id="nombreCliente"
             value={
-              cliente ? `${cliente.nombre ?? ""} ${cliente.apellido ?? ""}`.trim() : ""
+              cliente
+                ? `${cliente.nombre ?? ""} ${cliente.apellido ?? ""}`.trim()
+                : ""
             }
             disabled
             placeholder={cliente ? "" : "—"}
@@ -291,14 +315,23 @@ const PedidosForm = ({
         {isEdit ? (
           <div className="p-field">
             <label htmlFor="estado" className="block text-gray-700">
-              Estado actual: <Tag value={pedidoEdit?.estado || "Pendiente"} rounded className="ml-1" />
+              Estado actual:{" "}
+              <Tag
+                value={pedidoEdit?.estado || "Pendiente"}
+                rounded
+                className="ml-1"
+              />
             </label>
             <Dropdown
               id="estado"
               value={estadoSiguiente}
               options={allowedNextStates.map((e) => ({ label: e, value: e }))}
               onChange={(e) => setEstadoSiguiente(e.value)}
-              placeholder={allowedNextStates.length ? "Selecciona el siguiente estado (opcional)" : "No hay siguiente estado"}
+              placeholder={
+                allowedNextStates.length
+                  ? "Selecciona el siguiente estado (opcional)"
+                  : "No hay siguiente estado"
+              }
               className="w-full"
               panelClassName="rounded-md"
               disabled={submitting || !allowedNextStates.length}
@@ -308,7 +341,12 @@ const PedidosForm = ({
         ) : (
           <div className="p-field">
             <label className="block text-gray-700">Estado</label>
-            <Tag value="Pendiente" severity="warning" rounded className="px-3 py-1" />
+            <Tag
+              value="Pendiente"
+              severity="warning"
+              rounded
+              className="px-3 py-1"
+            />
           </div>
         )}
 

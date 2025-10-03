@@ -332,8 +332,8 @@ exports.actualizarPedido = async (req, res, next) => {
       pedido._id,
       cambios,
       { new: true }
-    )
-      .populate('cliente', 'nombre apellido')
+      )
+      .populate('cliente', 'nombre apellido telefono correo')
       .populate('producto', 'nombre precioUnitario materiales.material materiales.cantidadPorUnidad');
 
     if (!actualizado) {
@@ -383,8 +383,9 @@ exports.registrarPago = async (req, res, next) => {
     await pedido.save();
 
     const populated = await Pedido.findById(pedido._id)
-      .populate('cliente', 'nombre apellido')
+      .populate('cliente', 'nombre apellido telefono correo')
       .populate('producto', 'nombre precioUnitario');
+
 
     res.status(200).json(populated);
   } catch (e) { next(e); }

@@ -34,8 +34,8 @@ export default function PedidoKPICards({ from, to }) {
         const data = await resp.json();
         // Solo nos quedamos con los 3 necesarios
         setKpi({
-          realizados: Number(data.realizados || 0),
-          porHacer: Number(data.porHacer || 0),
+          realizados: Number(data.hechos || 0),
+          porHacer: Number(data.pendientes || 0),
           totalPedidos: Number(data.totalPedidos || 0),
         });
       } catch (e) {

@@ -2,9 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
-import { Dialog } from "primereact/dialog";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
 
 import PedidosListMaquinaria from "./PedidosListMaquinaria.jsx";
 import SalidasModalPedidos from "./modals/SalidasModalPedidos.jsx";
@@ -22,10 +19,6 @@ export default function PedidosPagesMaquinaria() {
 
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
-
-  // modal de detalle individual
-  const [openDetalle, setOpenDetalle] = useState(false);
-  const [detalle, setDetalle] = useState(null);
 
   // modal de salidas (global)
   const [openSalidas, setOpenSalidas] = useState(false);
@@ -71,7 +64,7 @@ export default function PedidosPagesMaquinaria() {
     });
   }, [pedidos, debounced]);
 
-  // Cambiar estado
+  // Cambiar estado (sin abrir modal al pasar a Hecho)
   const onCambiarEstado = async (row, nuevoEstadoRaw) => {
     const current = toCanonEstado(row?.estado);
     const allowedNext = nextStatesOfForMaquinaria(current);
@@ -125,16 +118,8 @@ export default function PedidosPagesMaquinaria() {
       setPedidos((prev) => prev.map((p) => (p._id === payload._id ? payload : p)));
       toast.current?.show({ severity: "success", summary: "Estado actualizado", life: 1800 });
 
-      if (payload?._salidaRegistrada && Array.isArray(payload?._materialesConsumidos)) {
-        setDetalle({
-          pedidoId: payload._id,
-          cliente: `${s(payload?.cliente?.nombre)} ${s(payload?.cliente?.apellido)}`.trim(),
-          producto: s(payload?.producto?.nombre || ""),
-          cantidad: payload?.cantidad,
-          materialesConsumidos: payload._materialesConsumidos,
-        });
-        setOpenDetalle(true);
-      }
+      // ⛔️ Antes aquí se abría el modal de detalle si _salidaRegistrada === true.
+      //     Lo removimos a pedido tuyo: no se muestra ningún modal al marcar "Hecho".
     } catch (e) {
       console.error(e);
       toast.current?.show({
@@ -146,31 +131,6 @@ export default function PedidosPagesMaquinaria() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const DetalleMateriales = () => {
-    if (!detalle) return null;
-    return (
-      <Dialog
-        header="Salida registrada (Pedido Hecho)"
-        visible={openDetalle}
-        style={{ width: "720px", maxWidth: "96vw" }}
-        modal
-        onHide={() => setOpenDetalle(false)}
-      >
-        <DataTable
-          value={detalle.materialesConsumidos || []}
-          className="p-datatable-sm"
-          responsiveLayout="scroll"
-          emptyMessage="Sin materiales"
-        >
-          <Column header="#" body={(_, { rowIndex }) => rowIndex + 1} style={{ width: "4rem" }} />
-          <Column field="insumo" header="Insumo (ID)" style={{ minWidth: 220 }} />
-          <Column field="cantidad" header="Cantidad" style={{ width: 120 }} />
-          <Column field="unidad" header="Unidad" style={{ width: 120 }} />
-        </DataTable>
-      </Dialog>
-    );
   };
 
   return (
@@ -213,8 +173,7 @@ export default function PedidosPagesMaquinaria() {
         onCambiarEstado={onCambiarEstado}
       />
 
-      {/* Modales */}
-      <DetalleMateriales />
+      {/* Modal global de salidas */}
       <SalidasModalPedidos open={openSalidas} onClose={() => setOpenSalidas(false)} />
     </div>
   );

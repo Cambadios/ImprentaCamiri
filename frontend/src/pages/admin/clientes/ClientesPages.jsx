@@ -21,7 +21,7 @@ const ClientesPage = () => {
         const data = await response.json();
 
         // Soporta { data: [...] } o [...] directo
-        const arr = Array.isArray(data?.data)
+        const arr = Array.isArray(data && data.data)
           ? data.data
           : Array.isArray(data)
           ? data
@@ -38,14 +38,15 @@ const ClientesPage = () => {
   // Normalizar seguro para búsqueda
   const safeStr = (v) => (v == null ? "" : String(v));
 
-  // Búsqueda segura (apellido/teléfono)
+  // Búsqueda por CI / apellido / teléfono
   const filteredClientes = useMemo(() => {
     const term = safeStr(searchTerm).toLowerCase().trim();
     if (!term) return clientes;
-    return (clientes ?? []).filter((c) => {
-      const tel = safeStr(c?.telefono);
-      const ape = safeStr(c?.apellido).toLowerCase();
-      return tel.includes(term) || ape.includes(term);
+    return (clientes || []).filter((c) => {
+      const ci  = safeStr(c && c.ci);
+      const tel = safeStr(c && c.telefono);
+      const ape = safeStr(c && c.apellido).toLowerCase();
+      return ci.includes(term) || tel.includes(term) || ape.includes(term);
     });
   }, [clientes, searchTerm]);
 
@@ -56,39 +57,61 @@ const ClientesPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await apiFetch(`/clientes/${id}`, { method: "DELETE" });
+      const resp = await apiFetch(`/clientes/${id}`, { method: "DELETE" });
+      if (!resp.ok) {
+        let err = {};
+        try { err = await resp.json(); } catch (e) {console.log(e)}
+        console.error("Error al eliminar cliente:", err && err.message ? err.message : resp.statusText);
+        return;
+      }
       setClientes((prev) => prev.filter((c) => c._id !== id));
     } catch (error) {
       console.error("Error al eliminar cliente", error);
     }
   };
 
-  const handleSave = async (cliente) => {
-    try {
-      if (clienteEdit) {
-        // Editar cliente
-        const response = await apiFetch(`/clientes/${clienteEdit._id}`, {
-          method: "PUT",
-          body: JSON.stringify(cliente),
-        });
-        const updated = await response.json();
-        setClientes((prev) =>
-          prev.map((c) => (c._id === updated._id ? updated : c))
-        );
-      } else {
-        // Crear cliente
-        const response = await apiFetch("/clientes", {
-          method: "POST",
-          body: JSON.stringify(cliente),
-        });
-        const created = await response.json();
-        setClientes((prev) => [...prev, created]);
+  // Guardar (crear/actualizar) — sin optional chaining y propagando errores al formulario
+  const handleSave = async (payload) => {
+    if (clienteEdit) {
+      // Editar
+      const response = await apiFetch(`/clientes/${clienteEdit._id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        let err = {};
+        try { err = await response.json(); } catch (e) {console.log(e)}
+        const msg = err && err.message ? err.message : "Error al actualizar";
+        const e = new Error(msg);
+        if (err && err.field) e.field = err.field;
+        throw e; // el formulario lo mostrará
       }
-      setClienteEdit(null);
-      setModalVisible(false);
-    } catch (error) {
-      console.error("Error al guardar cliente", error);
+
+      const updated = await response.json();
+      setClientes((prev) => prev.map((c) => (c._id === updated._id ? updated : c)));
+    } else {
+      // Crear
+      const response = await apiFetch("/clientes", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        let err = {};
+        try { err = await response.json(); } catch (e) {console.log(e)}
+        const msg = err && err.message ? err.message : "Error al crear";
+        const e = new Error(msg);
+        if (err && err.field) e.field = err.field;
+        throw e;
+      }
+
+      const created = await response.json();
+      setClientes((prev) => [...prev, created]);
     }
+
+    setClienteEdit(null);
+    setModalVisible(false);
   };
 
   const handleModalHide = () => {
@@ -127,7 +150,7 @@ const ClientesPage = () => {
       <div className="mb-4">
         <InputText
           type="text"
-          placeholder="Buscar por apellido o teléfono"
+          placeholder="Buscar por CI, apellido o teléfono"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full"

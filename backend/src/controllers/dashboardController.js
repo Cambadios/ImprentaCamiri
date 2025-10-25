@@ -238,18 +238,40 @@ exports.inventarioBajoStock = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-// 12) Valor del inventario por categoría
+// 12) Valor del inventario por categoría (con nombre)
 exports.inventarioValorPorCategoria = async (req, res, next) => {
   try {
     const data = await Inventario.aggregate([
-      { $project: { categoria: 1, valor: { $multiply: ['$cantidadDisponible', '$precioUnitario'] } } },
-      { $group: { _id: '$categoria', valor: { $sum: '$valor' } } },
-      { $project: { _id: 0, categoria: '$_id', valor: { $round: ['$valor', 2] } } },
+      { $project: {
+          categoria: 1,
+          valor: { $multiply: ["$cantidadDisponible", "$precioUnitario"] }
+      }},
+      { $lookup: {
+          from: "categorias",              // <-- ajusta si usa otro nombre
+          localField: "categoria",
+          foreignField: "_id",
+          as: "cat"
+      }},
+      { $unwind: { path: "$cat", preserveNullAndEmptyArrays: true }},
+      { $group: {
+          _id: "$categoria",
+          categoriaNombre: { $first: { $ifNull: ["$cat.nombre", "Sin categoría"] } },
+          valor: { $sum: "$valor" }
+      }},
+      { $project: {
+          _id: 0,
+          categoriaId: "$_id",
+          categoriaNombre: 1,
+          valor: { $round: ["$valor", 2] }
+      }},
       { $sort: { valor: -1 } }
     ]);
-    res.json({ data });
+
+    const totalInventario = data.reduce((a, r) => a + (r.valor || 0), 0);
+    res.json({ ok: true, totalInventario, data });
   } catch (err) { next(err); }
 };
+
 
 // 13) Rotación/consumo de materiales (igual a consumo de #9, solo renombrado)
 exports.inventarioRotacionMateriales = async (req, res, next) => {

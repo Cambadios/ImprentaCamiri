@@ -1,26 +1,43 @@
 // models/cliente.js
 const mongoose = require('mongoose');
 
-function normalizePhone(v) {
+function normalizeDigits(v) {
   if (!v) return v;
-  // Deja solo dígitos (ej. +591 7 123 456 -> 5917123456 o si quieres sin 591, ajusta aquí)
   return String(v).replace(/\D+/g, '');
 }
 
+function normalizePhone(v) {
+  return normalizeDigits(v);
+}
+
 const clienteSchema = new mongoose.Schema({
+  ci: {
+    type: String,
+    required: [true, 'El carnet de identidad es obligatorio'],
+    trim: true,
+    set: normalizeDigits,                 // solo dígitos
+    validate: {
+      validator: v => /^\d{5,12}$/.test(v), // ajusta rango a tu realidad local
+      message: props => `${props.value} no es un CI válido`
+    },
+    unique: true                          // clave única en BD
+  },
+
   nombre:   { type: String, required: true, trim: true },
   apellido: { type: String, required: true, trim: true },
+
   telefono: {
     type: String,
-    required: true,
+    required: false,          // si ya no quieres obligatorio, déjalo false
     trim: true,
     set: normalizePhone,
     validate: {
-      validator: v => /^\d{7,12}$/.test(v), // ajusta el rango si usarás 591...
+      validator: v => !v || /^\d{7,12}$/.test(v),
       message: props => `${props.value} no es un teléfono válido`
     },
-    unique: true, // garantiza unicidad a nivel BD
+    unique: true              // si NO quieres que sea único, cámbialo a false y quita el índice abajo
   },
+
   correo: {
     type: String,
     trim: true,
@@ -29,13 +46,15 @@ const clienteSchema = new mongoose.Schema({
       validator: v => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
       message: props => `${props.value} no es un correo válido`
     },
-    unique: false // si quieres también unique, cámbialo a true
+    unique: false
   },
+
   fechaRegistro: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-// Índices útiles
-clienteSchema.index({ telefono: 1 }, { unique: true });
-clienteSchema.index({ nombre: 'text', apellido: 'text', telefono: 'text', correo: 'text' });
+// Índices
+clienteSchema.index({ ci: 1 }, { unique: true });
+clienteSchema.index({ telefono: 1 }, { unique: true }); // elimina esta línea si ya no quieres teléfono único
+clienteSchema.index({ nombre: 'text', apellido: 'text', telefono: 'text', correo: 'text', ci: 'text' });
 
 module.exports = mongoose.model('Cliente', clienteSchema);

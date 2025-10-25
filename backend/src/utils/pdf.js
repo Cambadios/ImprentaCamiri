@@ -14,204 +14,318 @@ function exportTablePdf(res, options) {
     rows = [],
   } = options;
 
-  // Paleta/tipografías
+  // Paleta de colores profesional
   const COLORS = {
-    primary: '#2563eb',
-    headerBg: '#eef2ff',
-    zebraBg: '#f8fafc',
-    border:  '#e5e7eb',
-    text:    '#111827',
-    text2:   '#374151',
-    muted:   '#6b7280',
-  };
-  const FONTS = {
-    title:    ['Helvetica-Bold', 20],
-    subtitle: ['Helvetica', 11],
-    body:     ['Helvetica', 10],
-    small:    ['Helvetica', 8.5],
-    th:       ['Helvetica-Bold', 10.5],
-    td:       ['Helvetica', 10],
+    primary: '#1a56db',
+    secondary: '#0e7490',
+    accent: '#d97706',
+    dark: '#1f2937',
+    gray: '#6b7280',
+    lightGray: '#f3f4f6',
+    border: '#d1d5db',
+    white: '#ffffff',
   };
 
-  // HTTP headers
+  // Configuración de fuentes
+  const FONTS = {
+    title: { font: 'Helvetica-Bold', size: 28 },
+    subtitle: { font: 'Helvetica-Bold', size: 14 },
+    header: { font: 'Helvetica-Bold', size: 11 },
+    body: { font: 'Helvetica', size: 10 },
+    small: { font: 'Helvetica', size: 8.5 },
+  };
+
+  // Configurar respuesta HTTP
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-  // Márgenes: reservamos espacio de header/footer para que el contenido no los pise
-  const BASE_LEFT = 40, BASE_RIGHT = 40;
-  const BASE_TOP = 36, BASE_BOTTOM = 36;
-  const HEADER_H = 86, FOOTER_H = 30;
-
+  // Crear documento
   const doc = new PDFDocument({
     size: 'A4',
-    bufferPages: true, // clave para post-procesar header/footer
-    margins: {
-      top:    BASE_TOP + HEADER_H,
-      right:  BASE_RIGHT,
-      bottom: BASE_BOTTOM + FOOTER_H,
-      left:   BASE_LEFT,
-    },
+    margins: { top: 140, bottom: 70, left: 50, right: 50 },
+    bufferPages: true,
   });
 
-  // stream -> respuesta
   doc.pipe(res);
 
-  // Geometría
-  const pageWidth  = doc.page.width;
-  const contentWidth = pageWidth - BASE_LEFT - BASE_RIGHT;
+  // Variables de página
+  const pageWidth = doc.page.width;
+  const pageHeight = doc.page.height;
+  const contentWidth = pageWidth - 100;
 
-  // Helpers de formato
-  const nf = (n) =>
-    new Intl.NumberFormat('es-BO', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-  const money = (n) => (n == null ? '-' : `Bs ${nf(Number(n) || 0)}`);
+  // ============================================================
+  // FUNCIONES AUXILIARES
+  // ============================================================
 
-  // Normalizar filas
-  const safeRows = rows.map((r) => (Array.isArray(r) ? r : columns.map((c) => r?.[c.key] ?? '')));
-  const processedRows = safeRows.map((row) =>
-    row.map((cell, idx) => {
-      const col = columns[idx] || {};
-      if (col.isCurrency) return money(cell);
-      if (col.isNumeric)  return (cell === '' || cell == null) ? '-' : nf(cell);
-      return cell ?? '-';
-    })
-  );
+  const formatNumber = (num) => {
+    return new Intl.NumberFormat('es-BO', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(num || 0);
+  };
 
-  // ======== CONTENIDO (solo contenido; NADA de header/footer aquí) ========
-  if (processedRows.length > 0) {
-    doc.font(FONTS.body[0]).fontSize(FONTS.body[1]).fillColor(COLORS.muted)
-       .text(`Total de registros: ${processedRows.length}`);
+  const formatCurrency = (num) => {
+    return `Bs ${formatNumber(num)}`;
+  };
+
+  // ============================================================
+  // PROCESAR DATOS
+  // ============================================================
+
+  const processedRows = rows.map((row) => {
+    if (Array.isArray(row)) {
+      return row.map((cell, idx) => {
+        const col = columns[idx];
+        if (!col) return cell || '-';
+        if (col.isCurrency) return formatCurrency(cell);
+        if (col.isNumeric) return cell != null ? formatNumber(cell) : '-';
+        return cell || '-';
+      });
+    } else {
+      return columns.map((col) => {
+        const cell = row[col.key];
+        if (col.isCurrency) return formatCurrency(cell);
+        if (col.isNumeric) return cell != null ? formatNumber(cell) : '-';
+        return cell || '-';
+      });
+    }
+  });
+
+  // ============================================================
+  // GENERAR CONTENIDO
+  // ============================================================
+
+  if (processedRows.length === 0) {
+    // Mensaje cuando no hay datos
+    doc.moveDown(3);
+    doc
+      .font(FONTS.subtitle.font)
+      .fontSize(FONTS.subtitle.size)
+      .fillColor(COLORS.gray)
+      .text('No hay datos disponibles', { align: 'center' });
+    
     doc.moveDown(0.5);
+    
+    doc
+      .font(FONTS.body.font)
+      .fontSize(FONTS.body.size)
+      .fillColor(COLORS.gray)
+      .text('No se encontraron registros para mostrar en este reporte.', {
+        align: 'center',
+      });
   } else {
-    doc.moveDown(2);
-    doc.font(FONTS.subtitle[0]).fontSize(FONTS.subtitle[1]).fillColor(COLORS.muted)
-       .text('No hay datos disponibles', { align: 'center' });
-    doc.moveDown(0.5);
-    doc.font(FONTS.body[0]).fontSize(FONTS.body[1]).fillColor(COLORS.muted)
-       .text('Los datos solicitados no están disponibles en este momento.', { align: 'center' });
-  }
+    // Mostrar contador de registros
+    doc
+      .font(FONTS.body.font)
+      .fontSize(FONTS.body.size)
+      .fillColor(COLORS.gray)
+      .text(`Total de registros: ${processedRows.length}`, { align: 'left' });
+    
+    doc.moveDown(1);
 
-  if (columns.length > 0 && processedRows.length > 0) {
-    const baseRowH = Math.max(20, doc.currentLineHeight() + 10);
-
+    // Generar tabla
     doc.table(
       {
-        headers: columns.map((c) => c.header),
+        headers: columns.map((col) => col.header || col.key),
         rows: processedRows,
       },
       {
-        columnsSize: columns.map((c) => c.width || null),
+        columnsSize: columns.map((col) => col.width || undefined),
         width: contentWidth,
-        padding: [7, 9],
-        columnSpacing: 10,
-
+        padding: 8,
+        columnSpacing: 5,
         prepareHeader: () => {
-          const yStart = doc.y - 3;
-          doc.save()
-             .rect(doc.page.margins.left, yStart, contentWidth, baseRowH)
-             .fill(COLORS.headerBg)
-             .restore();
-          doc.font(FONTS.th[0]).fontSize(FONTS.th[1]).fillColor(COLORS.text);
+          doc
+            .font(FONTS.header.font)
+            .fontSize(FONTS.header.size)
+            .fillColor(COLORS.white);
         },
-
-        prepareRow: (row, iRow) => {
-          const yRow = doc.y - 2;
-          if (iRow % 2 === 1) {
-            doc.save()
-               .rect(doc.page.margins.left, yRow, contentWidth, baseRowH)
-               .fill(COLORS.zebraBg)
-               .restore();
-          }
-          doc.font(FONTS.td[0]).fontSize(FONTS.td[1]).fillColor(COLORS.text2);
+        prepareRow: (row, indexColumn, indexRow) => {
+          doc
+            .font(FONTS.body.font)
+            .fontSize(FONTS.body.size)
+            .fillColor(COLORS.dark);
         },
-
-        divider: {
-          header:    { disabled: true },
-          horizontal:{ disabled: false, width: 0.6, opacity: 0.25, color: COLORS.border },
-        },
+        headerRows: 1,
       }
     );
   }
 
-  // ======== POST-PROCESADO: HEADER y FOOTER por página ========
+  // ============================================================
+  // FUNCIONES PARA HEADER Y FOOTER
+  // ============================================================
+
   const drawHeader = () => {
-    const topY = BASE_TOP;
-    // barra superior
-    doc.save()
-       .rect(doc.page.margins.left, topY, contentWidth, 3)
-       .fill(COLORS.primary)
-       .restore();
+    // Guardar posición Y actual para no perderla
+    const currentY = doc.y;
+    
+    // Fondo decorativo superior
+    doc.save();
+    doc.rect(0, 0, pageWidth, 120).fill(COLORS.primary);
+    doc.restore();
 
-    const y0 = topY + 14;
-
-    // fecha (derecha) — lineBreak:false para NO forzar saltos
-    const dateText = dayjs().format('DD/MM/YYYY • HH:mm');
-    doc.font(FONTS.small[0]).fontSize(FONTS.small[1]).fillColor(COLORS.muted)
-       .text(dateText, doc.page.margins.left, y0, {
-         width: contentWidth, align: 'right', lineBreak: false
-       });
-
-    // logo (izquierda)
-    let logoW = 0;
+    // Logo (si existe)
     if (logoPath && fs.existsSync(logoPath)) {
       try {
-        doc.image(logoPath, doc.page.margins.left, y0 - 4, { width: 38, height: 38, fit: [38, 38] });
-        logoW = 46;
-      } catch {}
+        doc.image(logoPath, 50, 25, { width: 50, height: 50, fit: [50, 50] });
+      } catch (error) {
+        console.error('Error al cargar logo:', error.message);
+      }
     }
 
-    // título (centrado)
-    doc.font(FONTS.title[0]).fontSize(FONTS.title[1]).fillColor(COLORS.text)
-       .text(title, doc.page.margins.left + logoW, y0 + 6, {
-         width: contentWidth - logoW, align: 'center', lineBreak: false
-       });
+    // Título principal
+    doc
+      .font(FONTS.title.font)
+      .fontSize(FONTS.title.size)
+      .fillColor(COLORS.white)
+      .text(title, 110, 30, { 
+        width: contentWidth - 110, 
+        align: 'left',
+        lineBreak: false 
+      });
 
-    // subtítulos
-    let y = y0 + 46;
+    // Fecha y hora
+    const now = dayjs();
+    doc
+      .font(FONTS.small.font)
+      .fontSize(FONTS.small.size)
+      .fillColor(COLORS.lightGray)
+      .text(now.format('DD/MM/YYYY'), pageWidth - 100, 35, {
+        width: 50,
+        align: 'right',
+        lineBreak: false
+      });
+    
+    doc
+      .fontSize(FONTS.small.size)
+      .text(now.format('HH:mm'), pageWidth - 100, 48, {
+        width: 50,
+        align: 'right',
+        lineBreak: false
+      });
+
+    // Subtítulo del reporte
     if (listLabel) {
-      doc.font(FONTS.subtitle[0]).fontSize(FONTS.subtitle[1]).fillColor(COLORS.primary)
-         .text(listLabel, doc.page.margins.left, y, { lineBreak: false });
-      y += 18;
+      doc
+        .font(FONTS.subtitle.font)
+        .fontSize(FONTS.subtitle.size)
+        .fillColor(COLORS.white)
+        .text(listLabel, 50, 85, { 
+          width: contentWidth, 
+          align: 'left',
+          lineBreak: false 
+        });
     }
+
+    // Usuario que genera
     if (createdBy) {
-      doc.font(FONTS.body[0]).fontSize(FONTS.body[1]).fillColor(COLORS.muted)
-         .text(`Generado por: ${createdBy}`, doc.page.margins.left, y, { lineBreak: false });
-      y += 14;
+      doc
+        .font(FONTS.body.font)
+        .fontSize(FONTS.body.size)
+        .fillColor(COLORS.lightGray)
+        .text(`Generado por: ${createdBy}`, 50, 105, {
+          width: contentWidth,
+          align: 'left',
+          lineBreak: false
+        });
     }
 
-    // separador
-    doc.save()
-       .moveTo(doc.page.margins.left, y + 8)
-       .lineTo(doc.page.width - doc.page.margins.right, y + 8)
-       .strokeColor(COLORS.border).lineWidth(1).stroke()
-       .restore();
+    // Línea separadora
+    doc
+      .save()
+      .moveTo(50, 128)
+      .lineTo(pageWidth - 50, 128)
+      .strokeColor(COLORS.accent)
+      .lineWidth(2)
+      .stroke()
+      .restore();
+    
+    // Restaurar posición Y
+    doc.y = currentY;
   };
 
-  const drawFooter = (pageIndex, pageCount) => {
-    const footerY = doc.page.height - (BASE_BOTTOM + 12);
-    // línea superior
-    doc.save()
-       .moveTo(doc.page.margins.left, footerY - 10)
-       .lineTo(doc.page.width - doc.page.margins.right, footerY - 10)
-       .strokeColor(COLORS.border).lineWidth(1).stroke()
-       .restore();
+  const drawFooter = (currentPage, totalPages) => {
+    // Guardar posición Y actual
+    const currentY = doc.y;
+    
+    const footerY = pageHeight - 50;
 
-    // “Página X de Y”
-    const footerText = `Imprenta Camiri • ${dayjs().format('DD/MM/YYYY HH:mm')} • Página ${pageIndex + 1} de ${pageCount}`;
-    doc.font(FONTS.small[0]).fontSize(FONTS.small[1]).fillColor(COLORS.muted)
-       .text(footerText, doc.page.margins.left, footerY, {
-         width: contentWidth, align: 'center', lineBreak: false
-       });
+    // Línea superior del footer
+    doc
+      .save()
+      .moveTo(50, footerY - 10)
+      .lineTo(pageWidth - 50, footerY - 10)
+      .strokeColor(COLORS.border)
+      .lineWidth(1)
+      .stroke()
+      .restore();
+
+    // Preparar textos
+    const empresaText = 'Imprenta Camiri';
+    const paginaText = `Página ${currentPage} de ${totalPages}`;
+    const fechaText = dayjs().format('DD/MM/YYYY HH:mm');
+
+    // Calcular posiciones X para centrar cada texto en su columna
+    const col1X = 50;
+    const col1Width = contentWidth / 3;
+    
+    const col2X = 50 + contentWidth / 3;
+    const col2Width = contentWidth / 3;
+    
+    const col3X = 50 + (contentWidth * 2) / 3;
+    const col3Width = contentWidth / 3;
+
+    // IMPORTANTE: Usar lineBreak: false para evitar páginas extras
+    
+    // Nombre de la empresa (izquierda)
+    doc
+      .font(FONTS.small.font)
+      .fontSize(FONTS.small.size)
+      .fillColor(COLORS.gray)
+      .text(empresaText, col1X, footerY, {
+        width: col1Width,
+        align: 'left',
+        lineBreak: false,
+        continued: false
+      });
+
+    // Número de página (centro)
+    doc
+      .fillColor(COLORS.primary)
+      .text(paginaText, col2X, footerY, {
+        width: col2Width,
+        align: 'center',
+        lineBreak: false,
+        continued: false
+      });
+
+    // Fecha de generación (derecha)
+    doc
+      .fillColor(COLORS.gray)
+      .text(fechaText, col3X, footerY, {
+        width: col3Width,
+        align: 'right',
+        lineBreak: false,
+        continued: false
+      });
+    
+    // Restaurar posición Y original
+    doc.y = currentY;
   };
 
-  // Recorremos páginas en buffer y dibujamos header/footer UNA sola vez
-  const range = doc.bufferedPageRange(); // { start, count }
+  // ============================================================
+  // APLICAR HEADER Y FOOTER A TODAS LAS PÁGINAS
+  // ============================================================
+
+  const range = doc.bufferedPageRange();
+  
   for (let i = 0; i < range.count; i++) {
-    doc.switchToPage(range.start + i);
+    doc.switchToPage(i);
     drawHeader();
-    drawFooter(i, range.count);
+    drawFooter(i + 1, range.count);
   }
 
-  // Cerrar
+  // Finalizar documento
   doc.end();
 }
 

@@ -360,20 +360,46 @@ exports.inventarioBajoStock = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-// 17. Valor de inventario por categoría
+// 17. Valor de inventario por categoría (con nombre)
 exports.inventarioValorPorCategoria = async (req, res, next) => {
   try {
     const data = await Inventario.aggregate([
+      // Calcula valor por ítem
       { $project: {
           categoria: 1,
           valor: { $multiply: ["$cantidadDisponible", "$precioUnitario"] }
       }},
-      { $group: { _id: "$categoria", valor: { $sum: "$valor" } } },
+      // Une con categorías para obtener el nombre
+      { $lookup: {
+          from: "categorias",              // <-- ajusta si tu colección tiene otro nombre
+          localField: "categoria",
+          foreignField: "_id",
+          as: "cat"
+      }},
+      { $unwind: { path: "$cat", preserveNullAndEmptyArrays: true }},
+
+      // Agrupa por categoría y suma el valor
+      { $group: {
+          _id: "$categoria",
+          categoriaNombre: { $first: { $ifNull: ["$cat.nombre", "Sin categoría"] } },
+          valor: { $sum: "$valor" }
+      }},
+
+      // Formato final (compat: incluimos Id y nombre)
+      { $project: {
+          _id: 0,
+          categoriaId: "$_id",
+          categoriaNombre: 1,
+          valor: { $round: ["$valor", 2] }
+      }},
       { $sort: { valor: -1 } }
     ]);
-    res.json({ data });
+
+    const totalInventario = data.reduce((acc, r) => acc + (r.valor || 0), 0);
+    res.json({ ok: true, totalInventario, data });
   } catch (err) { next(err); }
 };
+
 
 // 18. Rotación de materiales (aprox.)
 exports.inventarioRotacion = async (req, res, next) => {

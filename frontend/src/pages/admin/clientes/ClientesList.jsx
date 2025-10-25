@@ -28,7 +28,15 @@ const ClientesList = ({ clientes = [], onEdit, onDelete }) => {
 
   return (
     <div className="card">
-      <DataTable value={Array.isArray(clientes) ? clientes : []} paginator rows={5} header="Lista de Clientes" dataKey="_id">
+      <DataTable
+        value={Array.isArray(clientes) ? clientes : []}
+        paginator
+        rows={5}
+        header="Lista de Clientes"
+        dataKey="_id"
+        responsiveLayout="scroll"
+      >
+        <Column field="ci" header="CI" />
         <Column field="nombre" header="Nombre" />
         <Column field="apellido" header="Apellido" />
         <Column field="telefono" header="Teléfono" />

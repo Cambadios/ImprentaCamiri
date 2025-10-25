@@ -5,8 +5,9 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// OJO: rutas específicas ANTES de '/:id'
+// Rutas específicas ANTES de '/:id'
 router.get('/buscar-por-telefono/:telefono', auth, ctrl.getClienteByTelefono);
+router.get('/buscar-por-ci/:ci', auth, ctrl.getClienteByCI);
 
 router.post('/', auth, ctrl.createCliente);
 router.get('/', auth, ctrl.getClientes);

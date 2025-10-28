@@ -208,16 +208,24 @@ exports.series = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-/** GET /api/bi/clientes?from&to&q&page=1&limit=10 */
+/** GET /api/bi/clientes?from&to&q&page=1&limit=10&estado=...&estadoPago=... */
 exports.clientesResumen = async (req, res, next) => {
   try {
     const { from, to } = parseRange(req.query);
+
+    // Búsqueda libre
     const q = (req.query.q || '').trim();
+
+    // Paginación
     const page  = Math.max(1, Number(req.query.page || 1));
     const limit = Math.max(1, Math.min(50, Number(req.query.limit || 10)));
     const skip  = (page - 1) * limit;
 
-    // Búsqueda básica; si quieres collation por acentos, añade { collation: { locale:'es', strength:1 } }
+    // ⬇️ NUEVO: filtros por estado/estadoPago (acepta array o CSV)
+    const estados     = asArray(req.query.estado);      // p.ej. ["Entregado","Producción"]
+    const estadosPago = asArray(req.query.estadoPago);  // p.ej. ["Pagado","Parcial"]
+
+    // Filtro de clientes por texto
     const matchCli = q ? {
       $or: [
         { nombre:   new RegExp(q, 'i') },
@@ -229,42 +237,57 @@ exports.clientesResumen = async (req, res, next) => {
 
     const items = await Cliente.aggregate([
       { $match: matchCli },
-      { $lookup: {
+      {
+        $lookup: {
           from: 'pedidos',
           let: { cid: '$_id' },
           pipeline: [
-            { $match: {
+            {
+              $match: {
                 $expr: { $eq: ['$cliente', '$$cid'] },
-                createdAt: { $gte: from, $lte: to }
-            }},
+                createdAt: { $gte: from, $lte: to },
+                ...(estados.length     ? { estado:     { $in: estados } } : {}),
+                ...(estadosPago.length ? { estadoPago: { $in: estadosPago } } : {}),
+              }
+            },
             { $project: { total:1, pagado:1, saldo:1, createdAt:1 } }
           ],
           as: 'ped'
-      }},
-      { $project: {
+        }
+      },
+      {
+        $project: {
           nombre: 1, apellido: 1, telefono: 1, correo: 1,
           pedidos: { $size: '$ped' },
           ingresos: { $sum: '$ped.total' },
           pagado: { $sum: '$ped.pagado' },
           saldo: { $sum: '$ped.saldo' },
           ultimaCompra: { $max: '$ped.createdAt' }
-      }},
+        }
+      },
       { $sort: { ingresos: -1 } },
       { $skip: skip },
       { $limit: limit }
     ]);
 
+    // total de clientes (sólo por búsqueda libre, no por estados)
     const total = await Cliente.countDocuments(matchCli);
-    // Redondeo
+
+    // Redondeo final
     items.forEach(it => {
       it.ingresos = to2(it.ingresos);
       it.pagado   = to2(it.pagado);
       it.saldo    = to2(it.saldo);
     });
 
-    res.json({ from, to, page, limit, total, items });
-  } catch (e) { next(e); }
+    res.json({
+      from, to, page, limit, total, items
+    });
+  } catch (e) {
+    next(e);
+  }
 };
+
 
 /** GET /api/bi/clientes/:id?from&to */
 exports.clienteDetalle = async (req, res, next) => {
@@ -362,7 +385,7 @@ exports.estadoPedidos = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-/** GET /api/bi/insumos/stock?sort=valuacion|-valuacion|cantidad|-cantidad&q&categoriaId&page=1&limit=50 */
+/** GET /api/bi/insumos/stock?sort=valuacion|-valuacion|cantidad|-cantidad|nombre|-nombre|categoria|-categoria&q&categoriaId&page=1&limit=50 */
 exports.insumosStock = async (req, res, next) => {
   try {
     const sortParam = (req.query.sort || '-valuacion').toLowerCase();
@@ -372,44 +395,110 @@ exports.insumosStock = async (req, res, next) => {
     const limit = Math.max(1, Math.min(100, Number(req.query.limit || 50)));
     const skip  = (page - 1) * limit;
 
+    // Filtros
     const match = {};
-    if (q) match.$or = [
-      { nombre: new RegExp(q, 'i') },
-      { marca:  new RegExp(q, 'i') },
-      { descripcion: new RegExp(q, 'i') }
-    ];
+    if (q) {
+      // búsqueda por nombre/marca/descripcion; si quieres incluir categoriaNombre, se filtra tras el $lookup (ver más abajo)
+      match.$or = [
+        { nombre:       new RegExp(q, 'i') },
+        { marca:        new RegExp(q, 'i') },
+        { descripcion:  new RegExp(q, 'i') }
+      ];
+    }
     if (categoriaId) match.categoria = categoriaId;
 
+    // Orden
     const sort = {};
-    if (sortParam === 'valuacion') sort.valuacion = 1;
-    else if (sortParam === '-valuacion') sort.valuacion = -1;
-    else if (sortParam === 'cantidad') sort.cantidadDisponible = 1;
-    else if (sortParam === '-cantidad') sort.cantidadDisponible = -1;
-    else sort.valuacion = -1;
+    if (sortParam === 'valuacion')            sort.valuacion =  1;
+    else if (sortParam === '-valuacion')      sort.valuacion = -1;
+    else if (sortParam === 'cantidad')        sort.cantidadDisponible =  1;
+    else if (sortParam === '-cantidad')       sort.cantidadDisponible = -1;
+    else if (sortParam === 'nombre')          sort.nombre =  1;
+    else if (sortParam === '-nombre')         sort.nombre = -1;
+    else if (sortParam === 'categoria')       sort.categoriaNombre =  1;
+    else if (sortParam === '-categoria')      sort.categoriaNombre = -1;
+    else                                      sort.valuacion = -1;
 
     const pipeline = [
       { $match: match },
+
+      // Calculamos valuación y dejamos campos clave
       { $project: {
           inventarioId: '$_id',
           codigo: 1, nombre: 1, categoria: 1, marca: 1, descripcion: 1,
           cantidadDisponible: 1, precioUnitario: 1,
+          unidadDeMedida: 1,
           valuacion: { $multiply: ['$cantidadDisponible', '$precioUnitario'] }
       }},
+
+      // Resolvemos nombre de categoría
+      { $lookup: {
+          from: 'categorias',
+          localField: 'categoria',
+          foreignField: '_id',
+          as: 'cat'
+      }},
+      { $unwind: { path: '$cat', preserveNullAndEmptyArrays: true }},
+
+      // Proyectamos nombre ya legible (fallback)
+      { $addFields: {
+          categoriaNombre: { $ifNull: ['$cat.nombre', 'Sin categoría'] }
+      }},
+
+      // Si el q debería buscar también por categoriaNombre, lo filtramos aquí
+      ...(q ? [{ $match: { $or: [
+        { nombre:       new RegExp(q, 'i') },
+        { marca:        new RegExp(q, 'i') },
+        { descripcion:  new RegExp(q, 'i') },
+        { categoriaNombre: new RegExp(q, 'i') }
+      ]}}] : []),
+
+      // Orden
       { $sort: sort },
+
+      // Paginación
       { $skip: skip },
-      { $limit: limit }
+      { $limit: limit },
+
+      // Formato final
+      { $project: {
+          _id: 0,
+          inventarioId: 1,
+          codigo: 1,
+          nombre: 1,
+          categoriaId: '$categoria',
+          categoriaNombre: 1,
+          marca: 1,
+          descripcion: 1,
+          unidadDeMedida: 1,
+          cantidadDisponible: { $round: ['$cantidadDisponible', 2] },
+          precioUnitario: { $round: ['$precioUnitario', 2] },
+          valuacion: { $round: ['$valuacion', 2] }
+      }}
     ];
 
     const [items, total] = await Promise.all([
       Inventario.aggregate(pipeline),
-      Inventario.countDocuments(match)
+      // total con los mismos filtros básicos; si quieres que el total respete el q sobre categoriaNombre,
+      // tendrías que repetir el lookup aquí también.
+      (async () => {
+        if (!q) return Inventario.countDocuments({ ...(categoriaId ? { categoria: categoriaId } : {}) });
+        const totalRows = await Inventario.aggregate([
+          ...(categoriaId ? [{ $match: { categoria: categoriaId } }] : []),
+          { $lookup: { from: 'categorias', localField: 'categoria', foreignField: '_id', as: 'cat' } },
+          { $unwind: { path: '$cat', preserveNullAndEmptyArrays: true } },
+          { $addFields: { categoriaNombre: { $ifNull: ['$cat.nombre', 'Sin categoría'] } } },
+          { $match: { $or: [
+            { nombre:       new RegExp(q, 'i') },
+            { marca:        new RegExp(q, 'i') },
+            { descripcion:  new RegExp(q, 'i') },
+            { categoriaNombre: new RegExp(q, 'i') }
+          ] } },
+          { $count: 'n' }
+        ]);
+        return totalRows?.[0]?.n || 0;
+      })()
     ]);
-
-    items.forEach(it => {
-      it.valuacion = to2(it.valuacion);
-      it.precioUnitario = to2(it.precioUnitario);
-      it.cantidadDisponible = to2(it.cantidadDisponible);
-    });
 
     res.json({ page, limit, total, items });
   } catch (e) { next(e); }
